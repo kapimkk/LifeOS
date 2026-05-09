@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: lifeos_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lifeos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lifeos}
+      POSTGRES_DB: ${POSTGRES_DB:-lifeos}
+    ports:
+      - '5432:5432'
+    volumes:
+      - lifeos_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-lifeos}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lifeos_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lifeos}:${POSTGRES_PASSWORD:-lifeos}@db:5432/${POSTGRES_DB:-lifeos}?schema=public
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-please-change-this-access-secret-min-32-chars}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-please-change-this-refresh-secret-min-32-chars}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-localhost}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    ports:
+      - '3000:3000'
+    volumes:
+      - lifeos_uploads:/app/public/uploads
+
+volumes:
+  lifeos_db_data:
+  lifeos_uploads:
