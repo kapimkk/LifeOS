@@ -7,7 +7,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   try {
     const user = await requireUser();
     const { id } = await params;
-    return ok(await habitsService.toggleToday(user.id, id));
+    return ok(await habitsService.toggleToday(user.id, id, user.timezone));
   } catch (err) {
     return handleApiError(err);
   }

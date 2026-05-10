@@ -93,7 +93,7 @@ export function TransactionsClient({ initialTransactions, categories, currency }
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -103,29 +103,32 @@ export function TransactionsClient({ initialTransactions, categories, currency }
               className="pl-9"
             />
           </div>
-          <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
-            <SelectTrigger className="w-full sm:w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os tipos</SelectItem>
-              <SelectItem value="INCOME">Receitas</SelectItem>
-              <SelectItem value="EXPENSE">Despesas</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={categoryId} onValueChange={(v) => setCategoryId(v)}>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas categorias</SelectItem>
-              {categories.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* On mobile, selects sit side-by-side in a 2-col grid */}
+          <div className="grid grid-cols-2 gap-2 sm:contents">
+            <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
+              <SelectTrigger className="w-full sm:w-[150px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="INCOME">Receitas</SelectItem>
+                <SelectItem value="EXPENSE">Despesas</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={categoryId} onValueChange={(v) => setCategoryId(v)}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas categorias</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {filtered.length === 0 ? (
@@ -159,8 +162,8 @@ export function TransactionsClient({ initialTransactions, categories, currency }
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{t.description}</p>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{formatDate(t.date)}</span>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                      <span className="shrink-0">{formatDate(t.date)}</span>
                       {t.category && (
                         <Badge
                           variant="outline"
@@ -192,10 +195,19 @@ export function TransactionsClient({ initialTransactions, categories, currency }
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="opacity-0 transition-opacity group-hover:opacity-100"
+                    className="hidden opacity-0 transition-opacity group-hover:opacity-100 sm:flex"
                     onClick={() => handleDelete(t.id)}
                   >
                     <Trash2 className="h-4 w-4" />
+                  </Button>
+                  {/* Always-visible delete on mobile */}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="flex sm:hidden"
+                    onClick={() => handleDelete(t.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </motion.li>
               ))}

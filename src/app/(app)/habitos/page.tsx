@@ -12,8 +12,8 @@ export const dynamic = 'force-dynamic';
 export default async function HabitsPage() {
   const user = await requireUser();
   const [habits, todaySummary] = await Promise.all([
-    habitsService.listWithStats(user.id),
-    habitsService.todaySummary(user.id),
+    habitsService.listWithStats(user.id, user.timezone),
+    habitsService.todaySummary(user.id, user.timezone),
   ]);
 
   const longestStreak = habits.reduce((max, h) => Math.max(max, h.longestStreak), 0);

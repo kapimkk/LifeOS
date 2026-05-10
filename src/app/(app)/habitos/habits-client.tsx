@@ -22,6 +22,8 @@ export interface HabitItem {
   streak: number;
   longestStreak: number;
   doneToday: boolean;
+  /** Streak exists but today not done yet — show "at risk" warning */
+  streakAtRisk: boolean;
   consistency30d: number;
   last30: { date: string; done: boolean }[];
 }
@@ -34,15 +36,12 @@ export function HabitsClient({ initialHabits }: { initialHabits: HabitItem[] }) 
   async function toggle(id: string) {
     const prev = habits;
     setHabits((arr) =>
-      arr.map((h) =>
-        h.id === id
-          ? {
-              ...h,
-              doneToday: !h.doneToday,
-              streak: h.doneToday ? h.streak - 1 : h.streak + 1,
-            }
-          : h,
-      ),
+      arr.map((h) => {
+        if (h.id !== id) return h;
+        const doneToday = !h.doneToday;
+        const streak = doneToday ? h.streak + 1 : Math.max(0, h.streak - 1);
+        return { ...h, doneToday, streak, streakAtRisk: streak > 0 && !doneToday };
+      }),
     );
     try {
       await apiFetch(`/api/habits/${id}/toggle`, { method: 'POST' });
@@ -114,8 +113,25 @@ export function HabitsClient({ initialHabits }: { initialHabits: HabitItem[] }) 
                         <p className="text-xs text-muted-foreground">{h.description}</p>
                       )}
                       <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="inline-flex items-center gap-1 text-warning">
-                          <Flame className="h-3 w-3" /> {h.streak} dias
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1',
+                            h.streakAtRisk
+                              ? 'text-destructive'
+                              : h.streak > 0
+                                ? 'text-warning'
+                                : 'text-muted-foreground',
+                          )}
+                          title={
+                            h.streakAtRisk
+                              ? 'Complete hoje para manter o foguinho!'
+                              : undefined
+                          }
+                        >
+                          <Flame
+                            className={cn('h-3 w-3', h.streakAtRisk && 'animate-pulse')}
+                          />
+                          {h.streak} dias{h.streakAtRisk ? ' ⚠' : ''}
                         </span>
                         <span>Maior: {h.longestStreak}</span>
                         <span>Consistência: {h.consistency30d}%</span>

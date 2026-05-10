@@ -20,6 +20,21 @@ export const metadata: Metadata = {
   keywords: ['LifeOS', 'finanças pessoais', 'hábitos', 'metas', 'produtividade'],
   authors: [{ name: 'LifeOS' }],
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
+
+  // PWA / App metadata
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'LifeOS',
+  },
+  applicationName: 'LifeOS',
+  formatDetection: { telephone: false },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'msapplication-TileColor': '#6366f1',
+    'msapplication-tap-highlight': 'no',
+  },
 };
 
 export const viewport: Viewport = {
@@ -29,11 +44,18 @@ export const viewport: Viewport = {
   ],
   width: 'device-width',
   initialScale: 1,
+  minimumScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        {/* PWA splash / icon links for iOS Safari */}
+        <link rel="apple-touch-icon" href="/icon-192.svg" />
+        <link rel="icon" type="image/svg+xml" href="/icon-192.svg" />
+      </head>
       <body className={`${inter.variable} font-sans`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
