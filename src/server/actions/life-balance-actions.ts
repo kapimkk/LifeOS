@@ -4,23 +4,13 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/server/auth/session';
 import { actionError, actionSuccess, type ActionResult } from './_helpers';
-import {
-  lifeBalanceSchema,
-  moodSchema,
-  type LifeBalanceInput,
-  type SerializedLifeBalance,
-  type SerializedMoodLog,
-  type MoodInput,
-} from '@/lib/validators/life-balance';
-
-// Re-export types so existing client imports continue to resolve.
-// `export type` is erased at compile time — no runtime value, allowed in 'use server'.
-export type {
+import { lifeBalanceSchema, moodSchema } from '@/lib/validators/life-balance';
+import type {
   LifeBalanceInput,
   SerializedLifeBalance,
   MoodInput,
   SerializedMoodLog,
-};
+} from '@/types/life-balance';
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -50,7 +40,7 @@ export async function saveLifeBalanceAction(
     const data = lifeBalanceSchema.parse(input);
 
     const record = await prisma.lifeBalance.upsert({
-      where:  { userId: user.id },
+      where: { userId: user.id },
       create: { userId: user.id, ...data },
       update: data,
     });
@@ -85,16 +75,14 @@ export async function getTodayMood(): Promise<SerializedMoodLog | null> {
   };
 }
 
-export async function saveMoodAction(
-  input: MoodInput,
-): Promise<ActionResult<SerializedMoodLog>> {
+export async function saveMoodAction(input: MoodInput): Promise<ActionResult<SerializedMoodLog>> {
   try {
     const user = await requireUser();
     const data = moodSchema.parse(input);
     const today = todayUTC(user.timezone ?? 'America/Sao_Paulo');
 
     const record = await prisma.moodLog.upsert({
-      where:  { userId_date: { userId: user.id, date: today } },
+      where: { userId_date: { userId: user.id, date: today } },
       create: { userId: user.id, mood: data.mood, note: data.note ?? null, date: today },
       update: { mood: data.mood, note: data.note ?? null },
     });

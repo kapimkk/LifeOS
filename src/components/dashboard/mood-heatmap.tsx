@@ -3,21 +3,34 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { type SerializedMoodLog } from '@/server/actions/life-balance-actions';
+import type { SerializedMoodLog } from '@/types/life-balance';
 import { MOODS } from './mood-tracker';
 
 // ─── Mood → display ───────────────────────────────────────────────────────────
 
 const MOOD_CELL: Record<string, { bg: string; label: string; emoji: string }> = {
-  awful: { bg: 'bg-red-500/80',     label: 'Péssimo', emoji: '😫' },
-  bad:   { bg: 'bg-orange-400/80',  label: 'Ruim',    emoji: '😐' },
-  okay:  { bg: 'bg-yellow-400/80',  label: 'Ok',      emoji: '🙂' },
-  good:  { bg: 'bg-emerald-400/80', label: 'Bem',     emoji: '😊' },
-  great: { bg: 'bg-violet-400/80',  label: 'Ótimo',   emoji: '🤩' },
+  awful: { bg: 'bg-red-500/80', label: 'Péssimo', emoji: '😫' },
+  bad: { bg: 'bg-orange-400/80', label: 'Ruim', emoji: '😐' },
+  okay: { bg: 'bg-yellow-400/80', label: 'Ok', emoji: '🙂' },
+  good: { bg: 'bg-emerald-400/80', label: 'Bem', emoji: '😊' },
+  great: { bg: 'bg-violet-400/80', label: 'Ótimo', emoji: '🤩' },
 };
 
-const MONTH_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const DAY_LABELS   = ['D','S','T','Q','Q','S','S'];
+const MONTH_LABELS = [
+  'Jan',
+  'Fev',
+  'Mar',
+  'Abr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Set',
+  'Out',
+  'Nov',
+  'Dez',
+];
+const DAY_LABELS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
 // ─── Build calendar grid ──────────────────────────────────────────────────────
 
@@ -89,9 +102,7 @@ export function MoodHeatmap({ logs }: Props) {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="text-sm font-semibold">
-            Clima Emocional do Ano
-          </CardTitle>
+          <CardTitle className="text-sm font-semibold">Clima Emocional do Ano</CardTitle>
           <span className="text-xs text-muted-foreground">{totalDays} dias registrados</span>
         </div>
       </CardHeader>
@@ -116,7 +127,10 @@ export function MoodHeatmap({ logs }: Props) {
               {/* Day-of-week labels */}
               <div className="mr-1 flex flex-col gap-0.5">
                 {DAY_LABELS.map((d, i) => (
-                  <span key={i} className="flex h-[11px] w-4 items-center text-[9px] text-muted-foreground/60">
+                  <span
+                    key={i}
+                    className="flex h-[11px] w-4 items-center text-[9px] text-muted-foreground/60"
+                  >
                     {i % 2 === 1 ? d : ''}
                   </span>
                 ))}

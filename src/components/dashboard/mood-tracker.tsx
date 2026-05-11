@@ -6,16 +6,47 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { saveMoodAction, type SerializedMoodLog } from '@/server/actions/life-balance-actions';
+import { saveMoodAction } from '@/server/actions/life-balance-actions';
+import type { SerializedMoodLog } from '@/types/life-balance';
 
 // ─── Mood config ──────────────────────────────────────────────────────────────
 
 export const MOODS = [
-  { key: 'awful', emoji: '😫', label: 'Péssimo',   color: 'bg-red-500/20 border-red-500/40 hover:bg-red-500/30',      activeColor: 'bg-red-500/30 border-red-500 ring-2 ring-red-500/40' },
-  { key: 'bad',   emoji: '😐', label: 'Ruim',      color: 'bg-orange-500/20 border-orange-500/40 hover:bg-orange-500/30', activeColor: 'bg-orange-500/30 border-orange-500 ring-2 ring-orange-500/40' },
-  { key: 'okay',  emoji: '🙂', label: 'Ok',         color: 'bg-yellow-500/20 border-yellow-500/40 hover:bg-yellow-500/30', activeColor: 'bg-yellow-500/30 border-yellow-500 ring-2 ring-yellow-500/40' },
-  { key: 'good',  emoji: '😊', label: 'Bem',        color: 'bg-emerald-500/20 border-emerald-500/40 hover:bg-emerald-500/30', activeColor: 'bg-emerald-500/30 border-emerald-500 ring-2 ring-emerald-500/40' },
-  { key: 'great', emoji: '🤩', label: 'Ótimo!',    color: 'bg-violet-500/20 border-violet-500/40 hover:bg-violet-500/30', activeColor: 'bg-violet-500/30 border-violet-500 ring-2 ring-violet-500/40' },
+  {
+    key: 'awful',
+    emoji: '😫',
+    label: 'Péssimo',
+    color: 'bg-red-500/20 border-red-500/40 hover:bg-red-500/30',
+    activeColor: 'bg-red-500/30 border-red-500 ring-2 ring-red-500/40',
+  },
+  {
+    key: 'bad',
+    emoji: '😐',
+    label: 'Ruim',
+    color: 'bg-orange-500/20 border-orange-500/40 hover:bg-orange-500/30',
+    activeColor: 'bg-orange-500/30 border-orange-500 ring-2 ring-orange-500/40',
+  },
+  {
+    key: 'okay',
+    emoji: '🙂',
+    label: 'Ok',
+    color: 'bg-yellow-500/20 border-yellow-500/40 hover:bg-yellow-500/30',
+    activeColor: 'bg-yellow-500/30 border-yellow-500 ring-2 ring-yellow-500/40',
+  },
+  {
+    key: 'good',
+    emoji: '😊',
+    label: 'Bem',
+    color: 'bg-emerald-500/20 border-emerald-500/40 hover:bg-emerald-500/30',
+    activeColor: 'bg-emerald-500/30 border-emerald-500 ring-2 ring-emerald-500/40',
+  },
+  {
+    key: 'great',
+    emoji: '🤩',
+    label: 'Ótimo!',
+    color: 'bg-violet-500/20 border-violet-500/40 hover:bg-violet-500/30',
+    activeColor: 'bg-violet-500/30 border-violet-500 ring-2 ring-violet-500/40',
+  },
 ] as const;
 
 export type MoodKey = (typeof MOODS)[number]['key'];
@@ -27,9 +58,7 @@ interface Props {
 }
 
 export function MoodTracker({ todayMood }: Props) {
-  const [selected, setSelected] = useState<MoodKey | null>(
-    (todayMood?.mood as MoodKey) ?? null,
-  );
+  const [selected, setSelected] = useState<MoodKey | null>((todayMood?.mood as MoodKey) ?? null);
   const [isPending, startTransition] = useTransition();
 
   function handleSelect(mood: MoodKey) {

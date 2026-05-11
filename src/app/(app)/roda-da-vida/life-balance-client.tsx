@@ -18,11 +18,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import {
-  saveLifeBalanceAction,
-  type LifeBalanceInput,
-  type SerializedLifeBalance,
-} from '@/server/actions/life-balance-actions';
+import { saveLifeBalanceAction } from '@/server/actions/life-balance-actions';
+import type { LifeBalanceInput, SerializedLifeBalance } from '@/types/life-balance';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -35,19 +32,49 @@ const CATEGORIES: {
   goalCategory: string;
   color: string;
 }[] = [
-  { key: 'saude',           label: 'Saúde',                emoji: '🏃',  goalCategory: 'FITNESS',   color: '#22c55e' },
-  { key: 'carreira',        label: 'Carreira',             emoji: '💼',  goalCategory: 'CAREER',    color: '#6366f1' },
-  { key: 'financas',        label: 'Finanças',             emoji: '💰',  goalCategory: 'FINANCIAL', color: '#f59e0b' },
-  { key: 'relacionamentos', label: 'Relacionamentos',      emoji: '❤️',  goalCategory: 'PERSONAL',  color: '#ec4899' },
-  { key: 'lazer',           label: 'Lazer',                emoji: '🎯',  goalCategory: 'PERSONAL',  color: '#14b8a6' },
-  { key: 'pessoal',         label: 'Desenvolvimento Pessoal', emoji: '🌱', goalCategory: 'PERSONAL', color: '#8b5cf6' },
-  { key: 'espiritualidade', label: 'Espiritualidade',      emoji: '✨',  goalCategory: 'PERSONAL',  color: '#f97316' },
-  { key: 'contribuicao',    label: 'Contribuição',         emoji: '🤝',  goalCategory: 'PERSONAL',  color: '#06b6d4' },
+  { key: 'saude', label: 'Saúde', emoji: '🏃', goalCategory: 'FITNESS', color: '#22c55e' },
+  { key: 'carreira', label: 'Carreira', emoji: '💼', goalCategory: 'CAREER', color: '#6366f1' },
+  { key: 'financas', label: 'Finanças', emoji: '💰', goalCategory: 'FINANCIAL', color: '#f59e0b' },
+  {
+    key: 'relacionamentos',
+    label: 'Relacionamentos',
+    emoji: '❤️',
+    goalCategory: 'PERSONAL',
+    color: '#ec4899',
+  },
+  { key: 'lazer', label: 'Lazer', emoji: '🎯', goalCategory: 'PERSONAL', color: '#14b8a6' },
+  {
+    key: 'pessoal',
+    label: 'Desenvolvimento Pessoal',
+    emoji: '🌱',
+    goalCategory: 'PERSONAL',
+    color: '#8b5cf6',
+  },
+  {
+    key: 'espiritualidade',
+    label: 'Espiritualidade',
+    emoji: '✨',
+    goalCategory: 'PERSONAL',
+    color: '#f97316',
+  },
+  {
+    key: 'contribuicao',
+    label: 'Contribuição',
+    emoji: '🤝',
+    goalCategory: 'PERSONAL',
+    color: '#06b6d4',
+  },
 ];
 
 const DEFAULT_VALUES: LifeBalanceInput = {
-  saude: 5, carreira: 5, financas: 5, relacionamentos: 5,
-  lazer: 5, pessoal: 5, espiritualidade: 5, contribuicao: 5,
+  saude: 5,
+  carreira: 5,
+  financas: 5,
+  relacionamentos: 5,
+  lazer: 5,
+  pessoal: 5,
+  espiritualidade: 5,
+  contribuicao: 5,
   notes: null,
 };
 
@@ -55,19 +82,27 @@ const DEFAULT_VALUES: LifeBalanceInput = {
 
 function ScoreLabel({ value }: { value: number }) {
   const color =
-    value >= 8 ? 'text-emerald-400' :
-    value >= 6 ? 'text-yellow-400' :
-    value >= 4 ? 'text-orange-400' : 'text-red-400';
+    value >= 8
+      ? 'text-emerald-400'
+      : value >= 6
+        ? 'text-yellow-400'
+        : value >= 4
+          ? 'text-orange-400'
+          : 'text-red-400';
   return (
-    <span className={cn('w-6 text-right text-sm font-bold tabular-nums', color)}>
-      {value}
-    </span>
+    <span className={cn('w-6 text-right text-sm font-bold tabular-nums', color)}>{value}</span>
   );
 }
 
 // ─── Custom tooltip ───────────────────────────────────────────────────────────
 
-function CustomTooltip({ active, payload }: { active?: boolean; payload?: { payload: { fullMark: number; value: number; subject: string } }[] }) {
+function CustomTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: { payload: { fullMark: number; value: number; subject: string } }[];
+}) {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   if (!d) return null;
@@ -123,7 +158,9 @@ function InsightCard({ scores }: { scores: LifeBalanceInput }) {
               </div>
             </div>
             <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs" asChild>
-              <a href={`/metas?new=1&category=${cat.goalCategory}&title=${encodeURIComponent(`Melhorar ${cat.label}`)}`}>
+              <a
+                href={`/metas?new=1&category=${cat.goalCategory}&title=${encodeURIComponent(`Melhorar ${cat.label}`)}`}
+              >
                 <Target className="h-3 w-3" />
                 Criar meta
               </a>
@@ -143,9 +180,7 @@ interface Props {
 
 export function LifeBalanceClient({ initial }: Props) {
   const router = useRouter();
-  const [scores, setScores] = useState<LifeBalanceInput>(
-    initial ? { ...initial } : DEFAULT_VALUES,
-  );
+  const [scores, setScores] = useState<LifeBalanceInput>(initial ? { ...initial } : DEFAULT_VALUES);
   const [isPending, startTransition] = useTransition();
 
   const radarData = CATEGORIES.map((cat) => ({
@@ -234,7 +269,9 @@ export function LifeBalanceClient({ initial }: Props) {
               <p className="text-xs text-muted-foreground">
                 Última atualização:{' '}
                 {new Date(initial.updatedAt).toLocaleDateString('pt-BR', {
-                  day: '2-digit', month: 'long', year: 'numeric',
+                  day: '2-digit',
+                  month: 'long',
+                  year: 'numeric',
                 })}
               </p>
             )}
@@ -278,13 +315,10 @@ export function LifeBalanceClient({ initial }: Props) {
                     className="flex flex-col items-center gap-0.5 rounded-lg border border-border/40 bg-muted/30 py-2 text-center"
                   >
                     <span className="text-base">{cat.emoji}</span>
-                    <span
-                      className="text-sm font-bold tabular-nums"
-                      style={{ color: cat.color }}
-                    >
+                    <span className="text-sm font-bold tabular-nums" style={{ color: cat.color }}>
                       {score}
                     </span>
-                    <span className="text-[9px] text-muted-foreground leading-tight px-1">
+                    <span className="px-1 text-[9px] leading-tight text-muted-foreground">
                       {cat.label.split(' ')[0]}
                     </span>
                   </div>
