@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ZodError, type ZodSchema } from 'zod';
+import { ZodError, type ZodType } from 'zod';
 import { UnauthorizedError } from '@/server/auth/session';
 
 export class ApiError extends Error {
@@ -41,10 +41,18 @@ export function handleApiError(error: unknown) {
   return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
 }
 
-export async function parseJson<T>(req: Request, schema: ZodSchema<T>): Promise<T> {
+/**
+ * Parses the request JSON body against a Zod schema.
+ * Generic over the schema itself so the return type is z.output<S>
+ * (with defaults applied), not the wider z.input<S> type.
+ */
+export async function parseJson<S extends ZodType>(
+  req: Request,
+  schema: S,
+): Promise<S['_output']> {
   try {
     const body = await req.json();
-    return schema.parse(body);
+    return schema.parse(body) as S['_output'];
   } catch (err) {
     if (err instanceof ZodError) throw err;
     throw new ApiError(400, 'JSON inválido');

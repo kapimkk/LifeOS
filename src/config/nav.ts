@@ -3,6 +3,7 @@ import {
   CheckSquare,
   Flame,
   LayoutDashboard,
+  RefreshCw,
   Settings,
   Target,
   User,
@@ -24,6 +25,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Hábitos', href: '/habitos', icon: Flame, group: 'principal' },
   { label: 'Tarefas', href: '/tarefas', icon: CheckSquare, group: 'principal' },
   { label: 'Recursos', href: '/recursos', icon: Bookmark, group: 'principal' },
+  { label: 'Roda da Vida', href: '/roda-da-vida', icon: RefreshCw, group: 'principal' },
   { label: 'Perfil', href: '/perfil', icon: User, group: 'pessoal' },
   { label: 'Configurações', href: '/configuracoes', icon: Settings, group: 'pessoal' },
 ];

@@ -7,11 +7,14 @@ import { CategoryChart } from '@/components/dashboard/category-chart';
 import { HabitsToday } from '@/components/dashboard/habits-today';
 import { ActiveGoals } from '@/components/dashboard/active-goals';
 import { PendingTasks } from '@/components/dashboard/pending-tasks';
+import { MoodTracker } from '@/components/dashboard/mood-tracker';
+import { MoodHeatmap } from '@/components/dashboard/mood-heatmap';
 import { requireUser } from '@/server/auth/session';
 import { goalsService } from '@/server/services/goals';
 import { habitsService } from '@/server/services/habits';
 import { tasksService } from '@/server/services/tasks';
 import { transactionsService } from '@/server/services/transactions';
+import { getTodayMood, getMoodHistory } from '@/server/actions/life-balance-actions';
 import { prisma } from '@/lib/prisma';
 import { formatCurrency } from '@/lib/utils';
 
@@ -24,7 +27,7 @@ export default async function DashboardPage() {
   const year = now.getFullYear();
   const month = now.getMonth();
 
-  const [monthly, monthlySeries, byCategory, goalStats, activeGoals, taskStats, pendingTasks, habitsToday, habits] =
+  const [monthly, monthlySeries, byCategory, goalStats, activeGoals, taskStats, pendingTasks, habitsToday, habits, todayMood, moodHistory] =
     await Promise.all([
       transactionsService.monthlySummary(user.id, year, month),
       transactionsService.monthlySeries(user.id, 6),
@@ -43,6 +46,8 @@ export default async function DashboardPage() {
       }),
       habitsService.todaySummary(user.id),
       habitsService.listWithStats(user.id),
+      getTodayMood(),
+      getMoodHistory(365),
     ]);
 
   const previousMonth = await transactionsService.monthlySummary(
@@ -152,6 +157,14 @@ export default async function DashboardPage() {
           icon={<Target />}
           accent="primary"
         />
+      </div>
+
+      {/* Diário de Humor */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <MoodTracker todayMood={todayMood} />
+        <div className="lg:col-span-2">
+          <MoodHeatmap logs={moodHistory} />
+        </div>
       </div>
     </div>
   );
