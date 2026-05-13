@@ -9,8 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { InvestmentDialog } from './investment-dialog';
-import { deleteInvestmentAction } from '@/server/actions/investments';
-import type { SerializedInvestment } from '@/server/services/investments';
+import { deleteInvestmentAction } from '@/modules/finance/interfaces/actions';
+import type { SerializedInvestment } from '@/modules/finance/domain/entities';
 import { formatCurrency } from '@/lib/utils';
 
 interface Props {

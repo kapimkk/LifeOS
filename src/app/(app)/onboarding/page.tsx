@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { OnboardingClient } from './onboarding-client';
-import { requireUser } from '@/server/auth/session';
+import { requireUser } from '@/shared/auth/session';
 
 export const metadata: Metadata = { title: 'Bem-vindo' };
 export const dynamic = 'force-dynamic';

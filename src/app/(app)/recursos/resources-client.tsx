@@ -30,8 +30,8 @@ import { ResourceDialog } from './resource-dialog';
 import {
   deleteResourceAction,
   toggleResourceDoneAction,
-} from '@/server/actions/resources';
-import type { SerializedResource } from '@/server/services/resources';
+} from '@/modules/resources/interfaces/actions';
+import type { SerializedResource } from '@/modules/resources/domain/entities';
 import { cn, formatDate } from '@/lib/utils';
 
 interface Props {
@@ -46,7 +46,10 @@ const STATUS_LABEL: Record<SerializedResource['status'], string> = {
   ARCHIVED: 'Arquivado',
 };
 
-const STATUS_VARIANT: Record<SerializedResource['status'], 'default' | 'success' | 'warning' | 'secondary'> = {
+const STATUS_VARIANT: Record<
+  SerializedResource['status'],
+  'default' | 'success' | 'warning' | 'secondary'
+> = {
   TO_READ: 'default',
   IN_PROGRESS: 'warning',
   DONE: 'success',

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { CheckCircle2, Target, TrendingUp, Wallet } from 'lucide-react';
+import { CheckCircle2, CreditCard, Target, TrendingUp, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { IncomeExpenseChart } from '@/components/dashboard/income-expense-chart';
@@ -9,13 +9,25 @@ import { ActiveGoals } from '@/components/dashboard/active-goals';
 import { PendingTasks } from '@/components/dashboard/pending-tasks';
 import { MoodTracker } from '@/components/dashboard/mood-tracker';
 import { MoodHeatmap } from '@/components/dashboard/mood-heatmap';
-import { requireUser } from '@/server/auth/session';
-import { goalsService } from '@/server/services/goals';
-import { habitsService } from '@/server/services/habits';
-import { tasksService } from '@/server/services/tasks';
-import { transactionsService } from '@/server/services/transactions';
-import { getTodayMood, getMoodHistory } from '@/server/actions/life-balance-actions';
-import { prisma } from '@/lib/prisma';
+import { requireUser } from '@/shared/auth/session';
+import {
+  getGoalStatsQuery,
+  listGoalsQuery,
+} from '@/modules/goals/application/queries/list-goals.query';
+import {
+  listHabitsWithStatsQuery,
+  getHabitsTodaySummaryQuery,
+} from '@/modules/habits/application/queries/list-habits.query';
+import {
+  getTaskStatsQuery,
+  listTasksQuery,
+} from '@/modules/tasks/application/queries/list-tasks.query';
+import {
+  getMonthlySummaryQuery,
+  getMonthlySeriesQuery,
+  getByCategoryQuery,
+} from '@/modules/finance/application/queries/list-transactions.query';
+import { getTodayMood, getMoodHistory } from '@/modules/life-balance/interfaces/actions';
 import { formatCurrency } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Dashboard' };
@@ -27,38 +39,44 @@ export default async function DashboardPage() {
   const year = now.getFullYear();
   const month = now.getMonth();
 
-  const [monthly, monthlySeries, byCategory, goalStats, activeGoals, taskStats, pendingTasks, habitsToday, habits, todayMood, moodHistory] =
-    await Promise.all([
-      transactionsService.monthlySummary(user.id, year, month),
-      transactionsService.monthlySeries(user.id, 6),
-      transactionsService.byCategory(user.id, year, month),
-      goalsService.stats(user.id),
-      prisma.goal.findMany({
-        where: { userId: user.id, status: 'ACTIVE' },
-        orderBy: [{ priority: 'desc' }, { deadline: 'asc' }],
-        take: 4,
-      }),
-      tasksService.stats(user.id),
-      prisma.task.findMany({
-        where: { userId: user.id, status: { not: 'DONE' } },
-        orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
-        take: 5,
-      }),
-      habitsService.todaySummary(user.id),
-      habitsService.listWithStats(user.id),
-      getTodayMood(),
-      getMoodHistory(365),
-    ]);
+  const tz = user.timezone ?? 'UTC';
+  const [
+    monthly,
+    monthlySeries,
+    byCategory,
+    goalStats,
+    activeGoals,
+    taskStats,
+    pendingTasks,
+    habitsToday,
+    habits,
+    todayMood,
+    moodHistory,
+  ] = await Promise.all([
+    getMonthlySummaryQuery(user.id, year, month),
+    getMonthlySeriesQuery(user.id, 6),
+    getByCategoryQuery(user.id, year, month),
+    getGoalStatsQuery(user.id),
+    listGoalsQuery(user.id, 'ACTIVE').then((gs) => gs.slice(0, 4)),
+    getTaskStatsQuery(user.id),
+    listTasksQuery(user.id).then((ts) => ts.filter((t) => t.status !== 'DONE').slice(0, 5)),
+    getHabitsTodaySummaryQuery(user.id, tz),
+    listHabitsWithStatsQuery(user.id, tz),
+    getTodayMood(),
+    getMoodHistory(365),
+  ]);
 
-  const previousMonth = await transactionsService.monthlySummary(
+  const previousMonth = await getMonthlySummaryQuery(
     user.id,
     month === 0 ? year - 1 : year,
     month === 0 ? 11 : month - 1,
   );
 
   const expenseTrend =
-    previousMonth.expense > 0
-      ? Math.round(((monthly.expense - previousMonth.expense) / previousMonth.expense) * 100)
+    previousMonth.expenseCash > 0
+      ? Math.round(
+          ((monthly.expenseCash - previousMonth.expenseCash) / previousMonth.expenseCash) * 100,
+        )
       : 0;
 
   const incomeTrend =
@@ -73,12 +91,12 @@ export default async function DashboardPage() {
         description="Aqui está o resumo da sua semana e do seu mês."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
-          label="Saldo do mês"
-          value={formatCurrency(monthly.balance, user.currency)}
+          label="Saldo em conta"
+          value={formatCurrency(monthly.balanceCash, user.currency)}
           icon={<Wallet />}
-          accent={monthly.balance >= 0 ? 'success' : 'destructive'}
+          accent={monthly.balanceCash >= 0 ? 'success' : 'destructive'}
           delay={0}
         />
         <StatCard
@@ -90,12 +108,19 @@ export default async function DashboardPage() {
           delay={0.05}
         />
         <StatCard
-          label="Despesas"
-          value={formatCurrency(monthly.expense, user.currency)}
+          label="Despesas na conta"
+          value={formatCurrency(monthly.expenseCash, user.currency)}
           icon={<Wallet />}
           accent="destructive"
           trend={expenseTrend ? { value: -expenseTrend, label: 'vs mês anterior' } : undefined}
           delay={0.1}
+        />
+        <StatCard
+          label="Fatura do mês"
+          value={formatCurrency(monthly.invoiceCreditCard, user.currency)}
+          icon={<CreditCard />}
+          accent="warning"
+          delay={0.12}
         />
         <StatCard
           label="Metas ativas"

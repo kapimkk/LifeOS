@@ -3,18 +3,18 @@ import { CheckCircle2, Clock, ListTodo } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { TasksClient } from './tasks-client';
-import { requireUser } from '@/server/auth/session';
-import { tasksService } from '@/server/services/tasks';
+import { requireUser } from '@/shared/auth/session';
+import {
+  listTasksQuery,
+  getTaskStatsQuery,
+} from '@/modules/tasks/application/queries/list-tasks.query';
 
 export const metadata: Metadata = { title: 'Tarefas' };
 export const dynamic = 'force-dynamic';
 
 export default async function TasksPage() {
   const user = await requireUser();
-  const [tasks, stats] = await Promise.all([
-    tasksService.list(user.id),
-    tasksService.stats(user.id),
-  ]);
+  const [tasks, stats] = await Promise.all([listTasksQuery(user.id), getTaskStatsQuery(user.id)]);
 
   const serialized = tasks.map((t) => ({
     id: t.id,

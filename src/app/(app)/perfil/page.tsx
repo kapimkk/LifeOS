@@ -4,7 +4,7 @@ import { ProfileForm } from './profile-form';
 import { AvatarUploader } from './avatar-uploader';
 import { PasswordForm } from './password-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { requireUser } from '@/server/auth/session';
+import { requireUser } from '@/shared/auth/session';
 
 export const metadata: Metadata = { title: 'Perfil' };
 export const dynamic = 'force-dynamic';

@@ -24,18 +24,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { apiFetch } from '@/lib/fetcher';
 import { transactionSchema, type TransactionInput } from '@/lib/validators/transaction';
-import type { CategoryOption, TransactionItem } from './transactions-client';
+import type { CategoryOption } from './transactions-client';
+import {
+  createTransactionAction,
+  updateTransactionAction,
+} from '@/modules/finance/interfaces/transaction-actions';
+import { formatNextChargeMonthLabel } from '@/modules/finance/domain/installment-rules';
+import type { SerializedTransaction } from '@/types/finance-transaction';
 
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   categories: CategoryOption[];
-  onCreated: (item: TransactionItem) => void;
+  mode: 'create' | 'edit';
+  initialTransaction?: SerializedTransaction | null;
+  onCreatedMany: (items: SerializedTransaction[]) => void;
+  onUpdated: (item: SerializedTransaction) => void;
 }
 
-export function TransactionDialog({ open, onOpenChange, categories, onCreated }: Props) {
+export function TransactionDialog({
+  open,
+  onOpenChange,
+  categories,
+  mode,
+  initialTransaction,
+  onCreatedMany,
+  onUpdated,
+}: Props) {
+  const editingId = mode === 'edit' && initialTransaction ? initialTransaction.id : null;
   const [submitting, setSubmitting] = useState(false);
 
   const {
@@ -55,51 +72,101 @@ export function TransactionDialog({ open, onOpenChange, categories, onCreated }:
       categoryId: undefined,
       date: new Date().toISOString().slice(0, 10),
       recurrence: 'NONE',
+      paymentMethod: 'CASH',
+      installments: 1,
     },
   });
 
   const type = watch('type');
+  const paymentMethod = watch('paymentMethod');
+  const dateStr = watch('date');
+  const installments = watch('installments');
+
   const visibleCategories = categories.filter((c) => c.type === type);
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    if (mode === 'edit' && initialTransaction) {
       reset({
-        type: 'EXPENSE',
-        amount: 0,
-        description: '',
-        notes: '',
-        date: new Date().toISOString().slice(0, 10),
-        recurrence: 'NONE',
+        type: initialTransaction.type,
+        amount: initialTransaction.amount,
+        description: initialTransaction.description.replace(/\s*\(\d+\/\d+\)\s*$/, ''),
+        notes: initialTransaction.notes ?? '',
+        categoryId: initialTransaction.categoryId ?? undefined,
+        date: initialTransaction.date.slice(0, 10),
+        recurrence: initialTransaction.recurrence,
+        paymentMethod: initialTransaction.paymentMethod,
+        installments: initialTransaction.installments,
       });
+      return;
     }
-  }, [open, reset]);
+    reset({
+      type: 'EXPENSE',
+      amount: 0,
+      description: '',
+      notes: '',
+      categoryId: undefined,
+      date: new Date().toISOString().slice(0, 10),
+      recurrence: 'NONE',
+      paymentMethod: 'CASH',
+      installments: 1,
+    });
+  }, [open, mode, initialTransaction, reset]);
 
   async function onSubmit(values: TransactionInput) {
     setSubmitting(true);
     try {
-      const created = await apiFetch<TransactionItem>('/api/transactions', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...values,
-          date: new Date(values.date as string).toISOString(),
-        }),
+      if (editingId) {
+        const res = await updateTransactionAction(editingId, values);
+        if (!res.success) {
+          toast.error(res.error ?? 'Erro ao atualizar');
+          return;
+        }
+        onUpdated(res.data);
+        return;
+      }
+
+      const res = await createTransactionAction({
+        ...values,
+        date:
+          typeof values.date === 'string'
+            ? new Date(values.date + 'T12:00:00').toISOString()
+            : values.date,
       });
-      toast.success('Transação criada');
-      onCreated(created);
-      onOpenChange(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao salvar');
+      if (!res.success) {
+        toast.error(res.error ?? 'Erro ao criar');
+        return;
+      }
+      onCreatedMany(res.data.items);
     } finally {
       setSubmitting(false);
     }
   }
 
+  const recurrenceVisible =
+    type === 'INCOME' || (type === 'EXPENSE' && paymentMethod !== 'CREDIT_CARD');
+
+  const showInstallments =
+    type === 'EXPENSE' && paymentMethod === 'CREDIT_CARD' && mode === 'create';
+
+  const purchaseAnchor =
+    typeof dateStr === 'string'
+      ? new Date(dateStr + 'T12:00:00')
+      : dateStr instanceof Date
+        ? dateStr
+        : new Date();
+
+  const nextChargeHint =
+    type === 'EXPENSE' && paymentMethod === 'CREDIT_CARD' && mode === 'create'
+      ? formatNextChargeMonthLabel(purchaseAnchor)
+      : null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nova transação</DialogTitle>
-          <DialogDescription>Registre uma receita ou despesa</DialogDescription>
+          <DialogTitle>{mode === 'edit' ? 'Editar transação' : 'Nova transação'}</DialogTitle>
+          <DialogDescription>Registre uma receita ou despesa.</DialogDescription>
         </DialogHeader>
 
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -107,8 +174,15 @@ export function TransactionDialog({ open, onOpenChange, categories, onCreated }:
             <div className="space-y-2">
               <Label>Tipo</Label>
               <Select
+                disabled={Boolean(editingId && initialTransaction?.installmentGroupId)}
                 value={type}
-                onValueChange={(v) => setValue('type', v as 'INCOME' | 'EXPENSE')}
+                onValueChange={(v) => {
+                  setValue('type', v as 'INCOME' | 'EXPENSE');
+                  if (v === 'INCOME') {
+                    setValue('paymentMethod', 'CASH');
+                    setValue('installments', 1);
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -118,9 +192,12 @@ export function TransactionDialog({ open, onOpenChange, categories, onCreated }:
                   <SelectItem value="INCOME">Receita</SelectItem>
                 </SelectContent>
               </Select>
+              {errors.type && <p className="text-xs text-destructive">{errors.type.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount">Valor</Label>
+              <Label htmlFor="amount">
+                Valor{showInstallments && installments > 1 ? ' total' : ''}
+              </Label>
               <Input
                 id="amount"
                 type="number"
@@ -134,7 +211,11 @@ export function TransactionDialog({ open, onOpenChange, categories, onCreated }:
 
           <div className="space-y-2">
             <Label htmlFor="description">Descrição</Label>
-            <Input id="description" placeholder="Ex.: Mercado da semana" {...register('description')} />
+            <Input
+              id="description"
+              placeholder="Ex.: Mercado da semana"
+              {...register('description')}
+            />
             {errors.description && (
               <p className="text-xs text-destructive">{errors.description.message}</p>
             )}
@@ -145,16 +226,14 @@ export function TransactionDialog({ open, onOpenChange, categories, onCreated }:
               <Label>Categoria</Label>
               <Select
                 value={watch('categoryId') ?? ''}
-                onValueChange={(v) => setValue('categoryId', v || null)}
+                onValueChange={(v) => setValue('categoryId', v || undefined)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
                   {visibleCategories.length === 0 ? (
-                    <div className="px-2 py-3 text-xs text-muted-foreground">
-                      Nenhuma categoria
-                    </div>
+                    <div className="px-2 py-3 text-xs text-muted-foreground">Nenhuma categoria</div>
                   ) : (
                     visibleCategories.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
@@ -164,31 +243,99 @@ export function TransactionDialog({ open, onOpenChange, categories, onCreated }:
                   )}
                 </SelectContent>
               </Select>
+              {errors.categoryId && (
+                <p className="text-xs text-destructive">{errors.categoryId.message}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="date">Data</Label>
-              <Input id="date" type="date" {...register('date')} />
+              <Label htmlFor="tx-date">
+                {mode === 'edit' ? 'Data de vencimento' : 'Data da compra/recebimento'}
+              </Label>
+              <Input id="tx-date" type="date" {...register('date')} />
+              {errors.date && <p className="text-xs text-destructive">{errors.date.message}</p>}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Recorrência</Label>
+            <Label>Forma de pagamento</Label>
             <Select
-              value={watch('recurrence')}
-              onValueChange={(v) => setValue('recurrence', v as TransactionInput['recurrence'])}
+              value={paymentMethod}
+              onValueChange={(v) => {
+                setValue('paymentMethod', v as TransactionInput['paymentMethod']);
+                if (v !== 'CREDIT_CARD') setValue('installments', 1);
+              }}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="NONE">Sem recorrência</SelectItem>
-                <SelectItem value="DAILY">Diária</SelectItem>
-                <SelectItem value="WEEKLY">Semanal</SelectItem>
-                <SelectItem value="MONTHLY">Mensal</SelectItem>
-                <SelectItem value="YEARLY">Anual</SelectItem>
+                <SelectItem value="CASH">Dinheiro / Conta</SelectItem>
+                <SelectItem value="PIX">Pix</SelectItem>
+                <SelectItem value="DEBIT">Cartão débito</SelectItem>
+                <SelectItem value="CREDIT_CARD">Cartão de crédito</SelectItem>
               </SelectContent>
             </Select>
+            {errors.paymentMethod && (
+              <p className="text-xs text-destructive">{errors.paymentMethod.message}</p>
+            )}
           </div>
+
+          {recurrenceVisible && (
+            <div className="space-y-2">
+              <Label>Recorrência</Label>
+              <Select
+                value={watch('recurrence')}
+                onValueChange={(v) => setValue('recurrence', v as TransactionInput['recurrence'])}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">Sem recorrência</SelectItem>
+                  <SelectItem value="DAILY">Diária</SelectItem>
+                  <SelectItem value="WEEKLY">Semanal</SelectItem>
+                  <SelectItem value="MONTHLY">Mensal</SelectItem>
+                  <SelectItem value="YEARLY">Anual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {showInstallments && (
+            <div className="space-y-2">
+              <Label htmlFor="inst">Número de parcelas</Label>
+              <Input
+                id="inst"
+                type="number"
+                min={1}
+                max={60}
+                {...register('installments', { valueAsNumber: true })}
+              />
+              {errors.installments && (
+                <p className="text-xs text-destructive">{errors.installments.message}</p>
+              )}
+            </div>
+          )}
+
+          {nextChargeHint && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-950 dark:text-amber-100">
+              Esta despesa no cartão começará a ser cobrada na fatura em{' '}
+              <strong className="capitalize">{nextChargeHint}</strong>
+              {installments > 1 && ` — ${installments} parcelas distribuídas nos meses seguintes.`}
+            </div>
+          )}
+
+          {mode === 'edit' &&
+            initialTransaction?.installmentNumber != null &&
+            initialTransaction.installments > 1 && (
+              <p className="text-xs text-muted-foreground">
+                Parcela{' '}
+                <strong>
+                  {initialTransaction.installmentNumber}/{initialTransaction.installments}
+                </strong>
+                . Ao editar apenas este lançamento, as demais parcelas não são alteradas.
+              </p>
+            )}
 
           <div className="space-y-2">
             <Label htmlFor="notes">Observações (opcional)</Label>
@@ -200,7 +347,7 @@ export function TransactionDialog({ open, onOpenChange, categories, onCreated }:
               Cancelar
             </Button>
             <Button type="submit" disabled={submitting}>
-              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salvar
             </Button>
           </DialogFooter>

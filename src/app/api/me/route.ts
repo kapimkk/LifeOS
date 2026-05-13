@@ -1,8 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { handleApiError, ok, parseJson } from '@/lib/api';
-import { prisma } from '@/lib/prisma';
-import { requireUser } from '@/server/auth/session';
-import { updateProfileSchema } from '@/lib/validators/user';
+import { requireUser } from '@/shared/auth/session';
+import { updateProfileSchema } from '@/modules/users/interfaces/schemas';
+import { updateProfileCommand } from '@/modules/users/application/commands/update-profile.command';
 
 export async function GET() {
   try {
@@ -17,19 +17,7 @@ export async function PATCH(req: NextRequest) {
   try {
     const user = await requireUser();
     const body = await parseJson(req, updateProfileSchema);
-    const updated = await prisma.user.update({
-      where: { id: user.id },
-      data: body,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        avatarUrl: true,
-        currency: true,
-        locale: true,
-        timezone: true,
-      },
-    });
+    const updated = await updateProfileCommand(user.id, body);
     return ok(updated);
   } catch (err) {
     return handleApiError(err);

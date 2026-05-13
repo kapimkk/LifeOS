@@ -3,15 +3,10 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { ApiError, handleApiError, ok } from '@/lib/api';
 import { prisma } from '@/lib/prisma';
-import { requireUser } from '@/server/auth/session';
+import { requireUser } from '@/shared/auth/session';
 
-const MAX_BYTES = 4 * 1024 * 1024; // 4 MB
+const MAX_BYTES = 4 * 1024 * 1024;
 
-/**
- * Allowlist of accepted MIME types mapped to a safe, fixed extension.
- * Extension is derived from the MIME type — never from the original filename —
- * to prevent path-traversal / LFI via crafted filenames like "../../evil.php".
- */
 const MIME_TO_EXT: Record<string, string> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
@@ -19,11 +14,6 @@ const MIME_TO_EXT: Record<string, string> = {
   'image/gif': 'gif',
 };
 
-/**
- * Magic byte signatures for image formats.
- * We read the first few bytes of the file to confirm the content really is
- * the image type it claims to be, regardless of what the Content-Type says.
- */
 const MAGIC_CHECKS: Array<{ mime: string; offset: number; bytes: number[] }> = [
   { mime: 'image/png', offset: 0, bytes: [0x89, 0x50, 0x4e, 0x47] },
   { mime: 'image/jpeg', offset: 0, bytes: [0xff, 0xd8, 0xff] },
@@ -47,27 +37,20 @@ export async function POST(req: NextRequest) {
     if (!(file instanceof File)) throw new ApiError(400, 'Arquivo inválido');
     if (file.size > MAX_BYTES) throw new ApiError(400, 'Imagem maior que 4 MB');
 
-    // Read file contents once
     const arrayBuffer = await file.arrayBuffer();
     const buf = Buffer.from(arrayBuffer);
 
-    // Verify real content via magic bytes — content-type header is attacker-controlled
     const detectedMime = detectMime(buf);
     if (!detectedMime || !(detectedMime in MIME_TO_EXT)) {
       throw new ApiError(400, 'Formato de imagem não suportado ou inválido');
     }
 
-    // Extension comes from the detected MIME, never from the original filename
     const ext = MIME_TO_EXT[detectedMime];
-
-    // Filename is deterministic per user+timestamp — no user input in path
     const filename = `${user.id}-${Date.now()}.${ext}`;
 
-    // Resolve final path and assert it's inside the expected directory
     const dir = path.resolve(process.cwd(), 'public', 'uploads', 'avatars');
     const dest = path.resolve(dir, filename);
     if (!dest.startsWith(dir + path.sep)) {
-      // Should never happen given the filename construction above, but guard anyway
       throw new ApiError(400, 'Caminho de arquivo inválido');
     }
 

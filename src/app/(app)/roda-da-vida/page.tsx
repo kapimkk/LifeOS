@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { PageHeader } from '@/components/layout/page-header';
-import { getLifeBalance } from '@/server/actions/life-balance-actions';
+import { getLifeBalance } from '@/modules/life-balance/interfaces/actions';
 import { LifeBalanceClient } from './life-balance-client';
 
 export const metadata: Metadata = { title: 'Roda da Vida | LifeOS' };

@@ -1,10 +1,18 @@
 import { handleApiError, ok } from '@/lib/api';
 import { prisma } from '@/lib/prisma';
-import { requireUser } from '@/server/auth/session';
-import { goalsService } from '@/server/services/goals';
-import { habitsService } from '@/server/services/habits';
-import { tasksService } from '@/server/services/tasks';
-import { transactionsService } from '@/server/services/transactions';
+import { requireUser } from '@/shared/auth/session';
+import { getGoalStatsQuery } from '@/modules/goals/application/queries/list-goals.query';
+import {
+  getHabitsTodaySummaryQuery,
+  listHabitsWithStatsQuery,
+} from '@/modules/habits/application/queries/list-habits.query';
+import { getTaskStatsQuery } from '@/modules/tasks/application/queries/list-tasks.query';
+import {
+  getMonthlySummaryQuery,
+  getBalanceAllTimeQuery,
+  getMonthlySeriesQuery,
+  getByCategoryQuery,
+} from '@/modules/finance/application/queries/list-transactions.query';
 
 export async function GET() {
   try {
@@ -25,24 +33,24 @@ export async function GET() {
       habitsToday,
       habits,
     ] = await Promise.all([
-      transactionsService.monthlySummary(user.id, year, month),
-      transactionsService.balanceAllTime(user.id),
-      transactionsService.monthlySeries(user.id, 6),
-      transactionsService.byCategory(user.id, year, month),
-      goalsService.stats(user.id),
+      getMonthlySummaryQuery(user.id, year, month),
+      getBalanceAllTimeQuery(user.id),
+      getMonthlySeriesQuery(user.id, 6),
+      getByCategoryQuery(user.id, year, month),
+      getGoalStatsQuery(user.id),
       prisma.goal.findMany({
         where: { userId: user.id, status: 'ACTIVE' },
         orderBy: [{ priority: 'desc' }, { deadline: 'asc' }],
         take: 4,
       }),
-      tasksService.stats(user.id),
+      getTaskStatsQuery(user.id),
       prisma.task.findMany({
         where: { userId: user.id, status: { not: 'DONE' } },
         orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
         take: 5,
       }),
-      habitsService.todaySummary(user.id),
-      habitsService.listWithStats(user.id),
+      getHabitsTodaySummaryQuery(user.id, user.timezone ?? 'UTC'),
+      listHabitsWithStatsQuery(user.id, user.timezone ?? 'UTC'),
     ]);
 
     return ok({

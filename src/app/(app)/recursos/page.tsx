@@ -3,8 +3,11 @@ import { BookOpen, Bookmark, CheckCheck } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { ResourcesClient } from './resources-client';
-import { requireUser } from '@/server/auth/session';
-import { resourcesService } from '@/server/services/resources';
+import { requireUser } from '@/shared/auth/session';
+import {
+  listResourcesQuery,
+  listResourceCategoriesQuery,
+} from '@/modules/resources/application/queries/list-resources.query';
 
 export const metadata: Metadata = { title: 'Recursos' };
 export const dynamic = 'force-dynamic';
@@ -12,8 +15,8 @@ export const dynamic = 'force-dynamic';
 export default async function ResourcesPage() {
   const user = await requireUser();
   const [items, categories] = await Promise.all([
-    resourcesService.list(user.id),
-    resourcesService.categories(user.id),
+    listResourcesQuery(user.id),
+    listResourceCategoriesQuery(user.id),
   ]);
 
   const total = items.length;

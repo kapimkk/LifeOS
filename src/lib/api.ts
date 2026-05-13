@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ZodError, type ZodType } from 'zod';
-import { UnauthorizedError } from '@/server/auth/session';
+import { UnauthorizedError } from '@/shared/errors';
 
 export class ApiError extends Error {
   status: number;
@@ -35,7 +35,10 @@ export function handleApiError(error: unknown) {
     return NextResponse.json({ error: error.message }, { status: 401 });
   }
   if (error instanceof ApiError) {
-    return NextResponse.json({ error: error.message, details: error.details }, { status: error.status });
+    return NextResponse.json(
+      { error: error.message, details: error.details },
+      { status: error.status },
+    );
   }
   console.error('[API ERROR]', error);
   return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
@@ -46,10 +49,7 @@ export function handleApiError(error: unknown) {
  * Generic over the schema itself so the return type is z.output<S>
  * (with defaults applied), not the wider z.input<S> type.
  */
-export async function parseJson<S extends ZodType>(
-  req: Request,
-  schema: S,
-): Promise<S['_output']> {
+export async function parseJson<S extends ZodType>(req: Request, schema: S): Promise<S['_output']> {
   try {
     const body = await req.json();
     return schema.parse(body) as S['_output'];

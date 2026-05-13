@@ -24,16 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  RESOURCE_CATEGORIES,
-  resourceSchema,
-  type ResourceInput,
-} from '@/lib/validators/resource';
-import {
-  createResourceAction,
-  updateResourceAction,
-} from '@/server/actions/resources';
-import type { SerializedResource } from '@/server/services/resources';
+import { RESOURCE_CATEGORIES, resourceSchema, type ResourceInput } from '@/lib/validators/resource';
+import { createResourceAction, updateResourceAction } from '@/modules/resources/interfaces/actions';
+import type { SerializedResource } from '@/modules/resources/domain/entities';
 
 interface Props {
   open: boolean;
@@ -50,13 +43,7 @@ const STATUS_OPTIONS: Array<{ value: ResourceInput['status']; label: string }> =
   { value: 'ARCHIVED', label: 'Arquivado' },
 ];
 
-export function ResourceDialog({
-  open,
-  onOpenChange,
-  editing,
-  knownCategories,
-  onSaved,
-}: Props) {
+export function ResourceDialog({ open, onOpenChange, editing, knownCategories, onSaved }: Props) {
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -137,13 +124,19 @@ export function ResourceDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{editing ? 'Editar recurso' : 'Novo recurso'}</DialogTitle>
-          <DialogDescription>Salve um link, artigo, vídeo ou material para depois</DialogDescription>
+          <DialogDescription>
+            Salve um link, artigo, vídeo ou material para depois
+          </DialogDescription>
         </DialogHeader>
 
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="space-y-2">
             <Label htmlFor="title">Título</Label>
-            <Input id="title" placeholder="Ex.: Guia completo de Next.js 15" {...register('title')} />
+            <Input
+              id="title"
+              placeholder="Ex.: Guia completo de Next.js 15"
+              {...register('title')}
+            />
             {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
           </div>
 

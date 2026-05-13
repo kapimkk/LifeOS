@@ -33,8 +33,8 @@ import {
 import {
   createInvestmentAction,
   updateInvestmentAction,
-} from '@/server/actions/investments';
-import type { SerializedInvestment } from '@/server/services/investments';
+} from '@/modules/finance/interfaces/actions';
+import type { SerializedInvestment } from '@/modules/finance/domain/entities';
 
 const COLORS = [
   '#22c55e',

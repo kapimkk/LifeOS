@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PreferencesForm } from './preferences-form';
-import { requireUser } from '@/server/auth/session';
+import { requireUser } from '@/shared/auth/session';
 import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = { title: 'Configurações' };

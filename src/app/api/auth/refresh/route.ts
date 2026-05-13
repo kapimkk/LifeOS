@@ -1,4 +1,4 @@
-import { refreshSession } from '@/server/auth/session';
+import { refreshSession } from '@/shared/auth/session';
 import { ApiError, handleApiError, ok } from '@/lib/api';
 
 export async function POST() {

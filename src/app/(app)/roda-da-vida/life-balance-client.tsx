@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { saveLifeBalanceAction } from '@/server/actions/life-balance-actions';
+import { saveLifeBalanceAction } from '@/modules/life-balance/interfaces/actions';
 import type { LifeBalanceInput, SerializedLifeBalance } from '@/types/life-balance';
 
 // ─── Config ───────────────────────────────────────────────────────────────────

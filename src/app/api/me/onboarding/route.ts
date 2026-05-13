@@ -1,14 +1,11 @@
 import { handleApiError, ok } from '@/lib/api';
-import { prisma } from '@/lib/prisma';
-import { requireUser } from '@/server/auth/session';
+import { requireUser } from '@/shared/auth/session';
+import { completeOnboardingCommand } from '@/modules/users/application/commands/complete-onboarding.command';
 
 export async function POST() {
   try {
     const user = await requireUser();
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { onboardedAt: new Date() },
-    });
+    await completeOnboardingCommand(user.id);
     return ok({ success: true });
   } catch (err) {
     return handleApiError(err);

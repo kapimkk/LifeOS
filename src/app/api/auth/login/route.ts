@@ -1,12 +1,11 @@
 import type { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { ApiError, handleApiError, ok, parseJson } from '@/lib/api';
-import { loginSchema } from '@/lib/validators/auth';
-import { comparePassword } from '@/server/auth/password';
-import { issueSession } from '@/server/auth/session';
+import { loginSchema } from '@/modules/users/interfaces/schemas';
+import { getUserByEmailQuery } from '@/modules/users/application/queries/get-user.query';
+import { comparePassword } from '@/shared/auth/password';
+import { issueSession } from '@/shared/auth/session';
 import { rateLimit } from '@/lib/rate-limit';
 
-/** Derive a stable key from the request: prefer X-Forwarded-For, fall back to a generic key. */
 function clientKey(req: NextRequest): string {
   const forwarded = req.headers.get('x-forwarded-for');
   const ip = forwarded ? forwarded.split(',')[0]?.trim() : 'unknown';
@@ -15,7 +14,6 @@ function clientKey(req: NextRequest): string {
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate limit: 5 attempts per IP per minute to prevent brute-force attacks.
     const limit = rateLimit(clientKey(req), { windowMs: 60_000, max: 5 });
     if (!limit.success) {
       const retryAfterSecs = Math.ceil((limit.resetAt - Date.now()) / 1000);
@@ -33,12 +31,12 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await parseJson(req, loginSchema);
+    const user = await getUserByEmailQuery(data.email);
 
-    const user = await prisma.user.findUnique({ where: { email: data.email } });
-    // Deliberate constant-time comparison path: always run comparePassword even when
-    // the user is not found, using a dummy hash, to prevent user-enumeration timing attacks.
     const dummyHash = '$2b$12$invalidhashpadding000000000000000000000000000000000000000';
-    const valid = user ? await comparePassword(data.password, user.passwordHash) : await comparePassword(data.password, dummyHash).then(() => false);
+    const valid = user
+      ? await comparePassword(data.password, user.passwordHash)
+      : await comparePassword(data.password, dummyHash).then(() => false);
 
     if (!user || !valid) throw new ApiError(401, 'Credenciais inválidas');
 
@@ -50,9 +48,7 @@ export async function POST(req: NextRequest) {
       },
     );
 
-    return ok({
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
-    });
+    return ok({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (err) {
     return handleApiError(err);
   }

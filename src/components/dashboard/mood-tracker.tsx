@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { saveMoodAction } from '@/server/actions/life-balance-actions';
+import { saveMoodAction } from '@/modules/life-balance/interfaces/actions';
 import type { SerializedMoodLog } from '@/types/life-balance';
 
 // ─── Mood config ──────────────────────────────────────────────────────────────

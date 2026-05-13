@@ -2,7 +2,15 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowDownCircle, ArrowUpCircle, Plus, Search, Trash2 } from 'lucide-react';
+import {
+  ArrowDownCircle,
+  ArrowUpCircle,
+  CreditCard,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,8 +25,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { TransactionDialog } from './transaction-dialog';
-import { apiFetch } from '@/lib/fetcher';
+import { deleteTransactionAction } from '@/modules/finance/interfaces/transaction-actions';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
+import type { SerializedTransaction } from '@/types/finance-transaction';
 
 export interface CategoryOption {
   id: string;
@@ -28,20 +37,8 @@ export interface CategoryOption {
   icon?: string | null;
 }
 
-export interface TransactionItem {
-  id: string;
-  type: 'INCOME' | 'EXPENSE';
-  amount: number;
-  description: string;
-  notes?: string | null;
-  categoryId?: string | null;
-  date: string;
-  recurrence: 'NONE' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
-  category?: { id: string; name: string; color: string } | null;
-}
-
 interface Props {
-  initialTransactions: TransactionItem[];
+  initialTransactions: SerializedTransaction[];
   categories: CategoryOption[];
   currency: string;
 }
@@ -53,6 +50,7 @@ export function TransactionsClient({ initialTransactions, categories, currency }
   const [type, setType] = useState<'all' | 'INCOME' | 'EXPENSE'>('all');
   const [categoryId, setCategoryId] = useState<'all' | string>('all');
   const [openDialog, setOpenDialog] = useState(false);
+  const [draft, setDraft] = useState<SerializedTransaction | null>(null);
 
   const filtered = useMemo(() => {
     return items.filter((t) => {
@@ -66,18 +64,26 @@ export function TransactionsClient({ initialTransactions, categories, currency }
   async function handleDelete(id: string) {
     const previous = items;
     setItems((prev) => prev.filter((t) => t.id !== id));
-    try {
-      await apiFetch(`/api/transactions/${id}`, { method: 'DELETE' });
-      toast.success('Transação removida');
-      router.refresh();
-    } catch {
+    const res = await deleteTransactionAction(id);
+    if (!res.success) {
       setItems(previous);
-      toast.error('Erro ao remover transação');
+      toast.error(res.error ?? 'Erro ao remover');
+      return;
     }
+    toast.success('Transação removida');
+    router.refresh();
   }
 
-  function handleCreated(item: TransactionItem) {
-    setItems((prev) => [item, ...prev]);
+  function mergeCreated(serializedList: SerializedTransaction[]) {
+    setItems((prev) => [
+      ...serializedList,
+      ...prev.filter((x) => !serializedList.some((y) => y.id === x.id)),
+    ]);
+    router.refresh();
+  }
+
+  function mergeUpdated(updated: SerializedTransaction) {
+    setItems((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
     router.refresh();
   }
 
@@ -86,9 +92,15 @@ export function TransactionsClient({ initialTransactions, categories, currency }
       <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <CardTitle>Transações</CardTitle>
-          <CardDescription>{filtered.length} registros</CardDescription>
+          <CardDescription>{filtered.length} registros neste período</CardDescription>
         </div>
-        <Button size="sm" onClick={() => setOpenDialog(true)}>
+        <Button
+          size="sm"
+          onClick={() => {
+            setDraft(null);
+            setOpenDialog(true);
+          }}
+        >
           <Plus className="h-4 w-4" /> Nova transação
         </Button>
       </CardHeader>
@@ -103,7 +115,6 @@ export function TransactionsClient({ initialTransactions, categories, currency }
               className="pl-9"
             />
           </div>
-          {/* On mobile, selects sit side-by-side in a 2-col grid */}
           <div className="grid grid-cols-2 gap-2 sm:contents">
             <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
               <SelectTrigger className="w-full sm:w-[150px]">
@@ -164,6 +175,27 @@ export function TransactionsClient({ initialTransactions, categories, currency }
                     <p className="truncate text-sm font-medium">{t.description}</p>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                       <span className="shrink-0">{formatDate(t.date)}</span>
+                      {t.paymentMethod !== 'CASH' && (
+                        <Badge variant="outline" className="border-transparent px-1.5 text-[10px]">
+                          {t.paymentMethod === 'CREDIT_CARD' && (
+                            <CreditCard className="mr-0.5 inline h-3 w-3" />
+                          )}
+                          {t.paymentMethod === 'DEBIT'
+                            ? 'Débito'
+                            : t.paymentMethod === 'PIX'
+                              ? 'Pix'
+                              : t.paymentMethod === 'CREDIT_CARD'
+                                ? 'Cartão'
+                                : 'Conta'}
+                        </Badge>
+                      )}
+                      {t.installmentNumber != null &&
+                        typeof t.installmentNumber === 'number' &&
+                        t.installments > 1 && (
+                          <Badge variant="secondary" className="px-1.5 text-[10px]">
+                            {t.installmentNumber}/{t.installments}
+                          </Badge>
+                        )}
                       {t.category && (
                         <Badge
                           variant="outline"
@@ -196,11 +228,32 @@ export function TransactionsClient({ initialTransactions, categories, currency }
                     size="icon"
                     variant="ghost"
                     className="hidden opacity-0 transition-opacity group-hover:opacity-100 sm:flex"
+                    onClick={() => {
+                      setDraft(t);
+                      setOpenDialog(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="flex sm:hidden"
+                    onClick={() => {
+                      setDraft(t);
+                      setOpenDialog(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="hidden opacity-0 transition-opacity group-hover:opacity-100 sm:flex"
                     onClick={() => handleDelete(t.id)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
-                  {/* Always-visible delete on mobile */}
                   <Button
                     size="icon"
                     variant="ghost"
@@ -218,9 +271,27 @@ export function TransactionsClient({ initialTransactions, categories, currency }
 
       <TransactionDialog
         open={openDialog}
-        onOpenChange={setOpenDialog}
+        onOpenChange={(o) => {
+          setOpenDialog(o);
+          if (!o) setDraft(null);
+        }}
+        mode={draft ? 'edit' : 'create'}
+        initialTransaction={draft}
         categories={categories}
-        onCreated={handleCreated}
+        onCreatedMany={(serializedList) => {
+          mergeCreated(serializedList);
+          setOpenDialog(false);
+          toast.success(
+            serializedList.length > 1
+              ? `${serializedList.length} parcelas criadas`
+              : 'Transação criada',
+          );
+        }}
+        onUpdated={(t) => {
+          mergeUpdated(t);
+          setOpenDialog(false);
+          toast.success('Transação atualizada');
+        }}
       />
     </Card>
   );

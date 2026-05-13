@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Topbar } from '@/components/layout/topbar';
-import { getCurrentUser } from '@/server/auth/session';
+import { getCurrentUser } from '@/shared/auth/session';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();

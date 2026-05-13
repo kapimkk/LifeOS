@@ -3,17 +3,21 @@ import { Activity, CheckCircle2, Flame } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { HabitsClient } from './habits-client';
-import { requireUser } from '@/server/auth/session';
-import { habitsService } from '@/server/services/habits';
+import { requireUser } from '@/shared/auth/session';
+import {
+  listHabitsWithStatsQuery,
+  getHabitsTodaySummaryQuery,
+} from '@/modules/habits/application/queries/list-habits.query';
 
 export const metadata: Metadata = { title: 'Hábitos' };
 export const dynamic = 'force-dynamic';
 
 export default async function HabitsPage() {
   const user = await requireUser();
+  const tz = user.timezone ?? 'UTC';
   const [habits, todaySummary] = await Promise.all([
-    habitsService.listWithStats(user.id, user.timezone),
-    habitsService.todaySummary(user.id, user.timezone),
+    listHabitsWithStatsQuery(user.id, tz),
+    getHabitsTodaySummaryQuery(user.id, tz),
   ]);
 
   const longestStreak = habits.reduce((max, h) => Math.max(max, h.longestStreak), 0);
