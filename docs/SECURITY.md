@@ -13,7 +13,7 @@
 
 ## XSS
 
-- Texto livre sanitizado com `isomorphic-dompurify` via `src/lib/sanitize.ts` e helpers Zod em `src/lib/zod-sanitize.ts`.
+- Texto livre sanitizado com `src/lib/sanitize.ts` (sem jsdom; compatível com Vercel) e helpers Zod em `src/lib/zod-sanitize.ts`.
 
 ## SQL Injection
 

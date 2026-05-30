@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { safeText } from '@/lib/zod-sanitize';
+import { sanitizeText } from '@/lib/sanitize';
 
 export const registerSchema = z.object({
-  name: safeText(2, 80, 'Informe seu nome'),
+  name: z.string().min(2, 'Informe seu nome').max(80).transform(sanitizeText),
   email: z.string().email('E-mail inválido').toLowerCase(),
   password: z
     .string()
@@ -11,6 +11,7 @@ export const registerSchema = z.object({
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 
+/** Login não importa zod-sanitize (evita carregar sanitizers pesados na rota de auth). */
 export const loginSchema = z.object({
   email: z.string().email('E-mail inválido').toLowerCase(),
   password: z.string().min(1, 'Senha obrigatória'),

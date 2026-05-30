@@ -90,7 +90,7 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 
 - Lista de espera: `User.isApproved` (login bloqueado até aprovação).
 - Anti brute force (429) em login/registro.
-- Sanitização XSS (`isomorphic-dompurify`) nos validadores Zod.
+- Sanitização XSS (`src/lib/sanitize.ts`, serverless-safe) nos validadores Zod.
 - Prisma apenas (sem SQL bruto). Detalhes: [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Stack
