@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -24,7 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RESOURCE_CATEGORIES, resourceSchema, type ResourceInput } from '@/lib/validators/resource';
+import {
+  RESOURCE_VAULT_CATEGORIES,
+  RESOURCE_VAULT_LABELS,
+  resourceSchema,
+  type ResourceInput,
+  type ResourceVaultCategory,
+} from '@/lib/validators/resource';
 import { createResourceAction, updateResourceAction } from '@/modules/resources/interfaces/actions';
 import type { SerializedResource } from '@/modules/resources/domain/entities';
 
@@ -32,7 +38,7 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing: SerializedResource | null;
-  knownCategories: string[];
+  defaultVaultCategory: ResourceVaultCategory;
   onSaved: (resource: SerializedResource) => void;
 }
 
@@ -43,14 +49,15 @@ const STATUS_OPTIONS: Array<{ value: ResourceInput['status']; label: string }> =
   { value: 'ARCHIVED', label: 'Arquivado' },
 ];
 
-export function ResourceDialog({ open, onOpenChange, editing, knownCategories, onSaved }: Props) {
+export function ResourceDialog({
+  open,
+  onOpenChange,
+  editing,
+  defaultVaultCategory,
+  onSaved,
+}: Props) {
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const categoryOptions = useMemo(() => {
-    const merged = new Set<string>([...RESOURCE_CATEGORIES, ...knownCategories]);
-    return Array.from(merged);
-  }, [knownCategories]);
 
   const {
     register,
@@ -65,13 +72,13 @@ export function ResourceDialog({ open, onOpenChange, editing, knownCategories, o
       title: '',
       url: '',
       description: '',
-      category: '',
+      vaultCategory: defaultVaultCategory,
       status: 'TO_READ',
     },
   });
 
   const status = watch('status');
-  const category = watch('category') ?? '';
+  const vaultCategory = watch('vaultCategory');
 
   useEffect(() => {
     if (open) {
@@ -82,26 +89,28 @@ export function ResourceDialog({ open, onOpenChange, editing, knownCategories, o
               title: editing.title,
               url: editing.url,
               description: editing.description ?? '',
-              category: editing.category ?? '',
+              vaultCategory: editing.vaultCategory,
+              category: editing.category ?? null,
               status: editing.status,
             }
           : {
               title: '',
               url: '',
               description: '',
-              category: '',
+              vaultCategory: defaultVaultCategory,
+              category: null,
               status: 'TO_READ',
             },
       );
     }
-  }, [open, editing, reset]);
+  }, [open, editing, reset, defaultVaultCategory]);
 
   function onSubmit(values: ResourceInput) {
     setSubmitError(null);
     const payload: ResourceInput = {
       ...values,
-      category: values.category?.trim() ? values.category.trim() : null,
       description: values.description?.trim() ? values.description.trim() : null,
+      category: values.category?.trim() ? values.category.trim() : null,
     };
     startTransition(async () => {
       const result = editing
@@ -154,19 +163,18 @@ export function ResourceDialog({ open, onOpenChange, editing, knownCategories, o
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Categoria (opcional)</Label>
+              <Label>Categoria</Label>
               <Select
-                value={category || '__none__'}
-                onValueChange={(v) => setValue('category', v === '__none__' ? '' : v)}
+                value={vaultCategory}
+                onValueChange={(v) => setValue('vaultCategory', v as ResourceVaultCategory)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">Sem categoria</SelectItem>
-                  {categoryOptions.map((c) => (
+                  {RESOURCE_VAULT_CATEGORIES.map((c) => (
                     <SelectItem key={c} value={c}>
-                      {c}
+                      {RESOURCE_VAULT_LABELS[c]}
                     </SelectItem>
                   ))}
                 </SelectContent>

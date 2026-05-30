@@ -11,6 +11,7 @@ import {
 import { createJourneyCommand } from '../application/commands/create-journey.command';
 import { addStepToJourneyCommand } from '../application/commands/add-step-to-journey.command';
 import { completeStepCommand } from '../application/commands/complete-step.command';
+import { revertStepCommand } from '../application/commands/revert-step.command';
 import { updateJourneyCommand } from '../application/commands/update-journey.command';
 import { deleteJourneyCommand } from '../application/commands/delete-journey.command';
 import { updateStepCommand } from '../application/commands/update-step.command';
@@ -155,6 +156,21 @@ export async function completeStepAction(stepId: string): Promise<ActionResult<S
     const serialized = await loadSerialized(user.id, journeyId);
     if (!serialized) return { success: false, error: 'Jornada não encontrada' };
     revalidateJourney();
+    revalidatePath('/dashboard');
+    return actionSuccess(serialized);
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+export async function revertStepAction(stepId: string): Promise<ActionResult<SerializedJourney>> {
+  try {
+    const user = await requireUser();
+    const { journeyId } = await revertStepCommand(user.id, stepId);
+    const serialized = await loadSerialized(user.id, journeyId);
+    if (!serialized) return { success: false, error: 'Jornada não encontrada' };
+    revalidateJourney();
+    revalidatePath('/dashboard');
     return actionSuccess(serialized);
   } catch (err) {
     return actionError(err);

@@ -153,6 +153,47 @@ export const journeyRepository = {
     return step.journeyId;
   },
 
+  async revertStep(userId: string, stepId: string) {
+    const step = await prisma.journeyStep.findUnique({
+      where: { id: stepId },
+      include: { journey: { select: { userId: true, id: true } } },
+    });
+    if (!step || step.journey.userId !== userId) {
+      const err = new Error('Passo não encontrado') as Error & { status?: number };
+      err.status = 404;
+      throw err;
+    }
+
+    if (step.status !== 'COMPLETED') {
+      const err = new Error('Somente missões concluídas podem ser revertidas.') as Error & {
+        status?: number;
+      };
+      err.status = 403;
+      throw err;
+    }
+
+    const siblings = await prisma.journeyStep.findMany({
+      where: { journeyId: step.journeyId },
+      orderBy: { order: 'asc' },
+    });
+
+    const laterCompleted = siblings.some((s) => s.order > step.order && s.status === 'COMPLETED');
+    if (laterCompleted) {
+      const err = new Error(
+        'Reverta primeiro as missões concluídas depois desta, na ordem da trilha.',
+      ) as Error & { status?: number };
+      err.status = 403;
+      throw err;
+    }
+
+    await prisma.journeyStep.update({
+      where: { id: stepId },
+      data: { status: 'LOCKED' },
+    });
+    await this.syncStepStatuses(step.journeyId);
+    return step.journeyId;
+  },
+
   async updateJourney(userId: string, journeyId: string, data: JourneyInput) {
     await this.assertJourneyOwnership(userId, journeyId);
     return prisma.journey.update({

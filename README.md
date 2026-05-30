@@ -10,17 +10,17 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 
 ### Dashboard
 
-- Resumo financeiro do mês (saldo, receitas, despesas)
-- Gráfico de evolução (últimos 6 meses)
-- Despesas por categoria (donut)
-- Hábitos do dia com toggle inline
-- Metas em destaque com barra de progresso
+- Resumo da **Jornada** (XP, progresso, missão em andamento)
+- Resumo de **Investimentos** (patrimônio total e alocação por tipo)
+- Sem widgets de finanças na tela principal (finanças permanecem em `/financas`)
 
 ### Jornada (gamificação)
 
 - Trilhas de estudo com passos ordenados (missões estilo RPG)
 - Desbloqueio sequencial: passo N só avança após N−1 concluído
 - Dificuldade (1–5 estrelas), XP por missão, instrutor e link do curso
+- **Voltar passo**: reverte conclusão acidental (subtrai XP do total calculado)
+- **Exportar XLSX**: botão "Salvar Jornada" gera planilha com todos os passos
 - UI em `/jornada` com linha vertical, cards neon e estados bloqueado/em andamento/concluído
 - Módulo DDD em `src/modules/journey` (commands, queries, repository)
 
@@ -39,10 +39,11 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 
 ### Cofre de Recursos
 
-- Salve links, artigos, vídeos, cursos e podcasts para depois
-- Categorias customizáveis + presets (Artigo, Vídeo, Curso, Livro, ...)
+- Salve links organizados em três abas: **Estudos**, **Lazer** e **Ferramentas**
+- Campo `vaultCategory` no banco (enum Prisma); rótulo legado `category` preservado
 - Status: para ler, lendo, concluído, arquivado
-- Filtro por categoria + busca por título/descrição
+- Busca por título/descrição dentro da aba ativa
+- **Exportar XLSX** por categoria (botão em cada aba)
 - Toggle inline de "lido"
 
 ### Metas

@@ -1,4 +1,5 @@
 export type ResourceStatus = 'TO_READ' | 'IN_PROGRESS' | 'DONE' | 'ARCHIVED';
+export type ResourceVaultCategory = 'ESTUDOS' | 'LAZER' | 'FERRAMENTAS';
 
 export interface Resource {
   id: string;
@@ -6,6 +7,7 @@ export interface Resource {
   title: string;
   url: string;
   description: string | null;
+  vaultCategory: ResourceVaultCategory;
   category: string | null;
   status: ResourceStatus;
   createdAt: Date;
@@ -17,6 +19,7 @@ export interface SerializedResource {
   title: string;
   url: string;
   description: string | null;
+  vaultCategory: ResourceVaultCategory;
   category: string | null;
   status: ResourceStatus;
   createdAt: string;

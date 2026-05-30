@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { Compass, Map, Plus, Swords, Zap } from 'lucide-react';
+import { Compass, Download, Map, Plus, Swords, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { computeEarnedXp, computeTotalXpAvailable } from '@/modules/journey/domain/xp-progress';
+import { downloadXlsx } from '@/lib/export-xlsx';
 import type { SerializedJourney, SerializedJourneyStep } from '@/modules/journey/domain/entities';
 import {
   addStepToJourneyAction,
   completeStepAction,
+  revertStepAction,
   createJourneyAction,
   deleteJourneyAction,
   deleteStepAction,
@@ -50,7 +52,14 @@ export function JourneyClient({ initialJourneys }: Props) {
   const [editStep, setEditStep] = useState<SerializedJourneyStep | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [completingId, setCompletingId] = useState<string | null>(null);
+  const [revertingId, setRevertingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const JOURNEY_STATUS_LABEL: Record<SerializedJourneyStep['status'], string> = {
+    LOCKED: 'Bloqueado',
+    IN_PROGRESS: 'Em progresso',
+    COMPLETED: 'Concluído',
+  };
 
   const active = useMemo(
     () => journeys.find((j) => j.id === selectedId) ?? journeys[0] ?? null,
@@ -130,6 +139,50 @@ export function JourneyClient({ initialJourneys }: Props) {
       toast.success(`Missão concluída! +${step?.xpReward ?? 0} XP`);
       setCompletingId(null);
     });
+  }
+
+  function handleRevert(stepId: string) {
+    const step = sortedSteps.find((s) => s.id === stepId);
+    setRevertingId(stepId);
+    startTransition(async () => {
+      const res = await revertStepAction(stepId);
+      if (!res.success) {
+        toast.error(res.error);
+        setRevertingId(null);
+        return;
+      }
+      replaceJourney(res.data);
+      toast.success(`Passo revertido. −${step?.xpReward ?? 0} XP`);
+      setRevertingId(null);
+    });
+  }
+
+  function handleExportJourney() {
+    if (!active || sortedSteps.length === 0) {
+      toast.message('Adicione passos à jornada antes de exportar.');
+      return;
+    }
+    const safeName =
+      active.name
+        .replace(/[^\w\s-]/g, '')
+        .trim()
+        .slice(0, 40) || 'jornada';
+    downloadXlsx(
+      `jornada-${safeName}.xlsx`,
+      'Jornada',
+      ['Ordem', 'Título', 'Instrutor', 'Dificuldade', 'XP', 'Status', 'Link/URL', 'Descrição'],
+      sortedSteps.map((s) => [
+        s.order,
+        s.title,
+        s.instructor ?? '',
+        s.difficulty,
+        s.xpReward,
+        JOURNEY_STATUS_LABEL[s.status],
+        s.url ?? '',
+        s.description ?? '',
+      ]),
+    );
+    toast.success('Planilha da jornada baixada');
   }
 
   function confirmDelete() {
@@ -217,18 +270,31 @@ export function JourneyClient({ initialJourneys }: Props) {
           </div>
 
           {active && (
-            <div className="mx-auto flex max-w-lg items-start justify-between gap-3 rounded-xl border border-cyan-500/20 bg-slate-900/50 px-4 py-3">
-              <div className="min-w-0 flex-1">
-                <h2 className="truncate text-lg font-semibold text-slate-50">{active.name}</h2>
-                {active.description && (
-                  <p className="mt-1 text-sm text-muted-foreground">{active.description}</p>
-                )}
+            <div className="mx-auto flex max-w-lg flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex max-w-lg flex-1 items-start justify-between gap-3 rounded-xl border border-cyan-500/20 bg-slate-900/50 px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <h2 className="truncate text-lg font-semibold text-slate-50">{active.name}</h2>
+                  {active.description && (
+                    <p className="mt-1 text-sm text-muted-foreground">{active.description}</p>
+                  )}
+                </div>
+                <JourneyHeaderControls
+                  disabled={isPending}
+                  onEdit={() => setEditJourneyOpen(true)}
+                  onDelete={() => setDeleteTarget({ type: 'journey', journey: active })}
+                />
               </div>
-              <JourneyHeaderControls
-                disabled={isPending}
-                onEdit={() => setEditJourneyOpen(true)}
-                onDelete={() => setDeleteTarget({ type: 'journey', journey: active })}
-              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="shrink-0 border-cyan-500/30"
+                disabled={sortedSteps.length === 0}
+                onClick={handleExportJourney}
+              >
+                <Download className="mr-1 h-4 w-4" />
+                Salvar Jornada
+              </Button>
             </div>
           )}
 
@@ -251,8 +317,10 @@ export function JourneyClient({ initialJourneys }: Props) {
                       index={i}
                       total={sortedSteps.length}
                       completing={completingId === step.id && isPending}
+                      reverting={revertingId === step.id && isPending}
                       managing={isPending}
                       onComplete={handleComplete}
+                      onRevert={handleRevert}
                       onEdit={(s) => setEditStep(s)}
                       onDelete={(s) =>
                         setDeleteTarget({

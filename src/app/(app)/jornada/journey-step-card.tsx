@@ -1,6 +1,6 @@
 'use client';
 
-import { Lock, Star } from 'lucide-react';
+import { Lock, RotateCcw, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { JourneyXpBadge } from '@/modules/journey/interfaces/components/journey-xp-badge';
@@ -12,8 +12,10 @@ interface Props {
   index: number;
   total: number;
   completing: boolean;
+  reverting?: boolean;
   managing?: boolean;
   onComplete: (stepId: string) => void;
+  onRevert?: (stepId: string) => void;
   onEdit: (step: SerializedJourneyStep) => void;
   onDelete: (step: SerializedJourneyStep) => void;
 }
@@ -41,8 +43,10 @@ export function JourneyStepCard({
   index,
   total,
   completing,
+  reverting,
   managing,
   onComplete,
+  onRevert,
   onEdit,
   onDelete,
 }: Props) {
@@ -73,29 +77,31 @@ export function JourneyStepCard({
           />
         )}
 
-        <div className="absolute right-3 top-3 flex items-center gap-1">
-          {locked && (
-            <span className="mr-1 text-slate-500" aria-hidden>
-              <Lock className="h-4 w-4" />
-            </span>
-          )}
-          <StepCardActions
-            onEdit={() => onEdit(step)}
-            onDelete={() => onDelete(step)}
-            disabled={managing}
-          />
-        </div>
-
-        <div className="flex flex-wrap items-start justify-between gap-2 pr-16">
+        <div className="flex items-start justify-between gap-3">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400/80">
             Missão {step.order} / {total}
           </p>
-          <JourneyXpBadge xpReward={step.xpReward} earned={completed} size="sm" />
+          <div className="flex shrink-0 items-center gap-2">
+            {locked && (
+              <span
+                className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-600/60 bg-slate-800/50 text-slate-400"
+                title="Bloqueada"
+                aria-label="Missão bloqueada"
+              >
+                <Lock className="h-4 w-4" />
+              </span>
+            )}
+            <JourneyXpBadge xpReward={step.xpReward} earned={completed} size="sm" />
+            <StepCardActions
+              onEdit={() => onEdit(step)}
+              onDelete={() => onDelete(step)}
+              disabled={managing}
+            />
+          </div>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        <div className="mt-2">
           <h3 className="text-lg font-bold uppercase tracking-wide text-slate-50">{step.title}</h3>
-          <JourneyXpBadge xpReward={step.xpReward} earned={completed} className="md:hidden" />
         </div>
 
         {step.instructor && (
@@ -125,18 +131,41 @@ export function JourneyStepCard({
         )}
 
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <JourneyXpBadge xpReward={step.xpReward} earned={completed} />
-          <div className="flex-1">
+          <JourneyXpBadge xpReward={step.xpReward} earned={completed} className="sm:hidden" />
+          <div className="flex flex-1 flex-col gap-2">
             {completed ? (
-              <Button className="w-full cursor-default bg-emerald-600/20 text-emerald-300" disabled>
-                ✓ Missão concluída
-              </Button>
+              <>
+                <Button
+                  className="w-full cursor-default bg-emerald-600/20 text-emerald-300"
+                  disabled
+                >
+                  ✓ Missão concluída
+                </Button>
+                {onRevert && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-slate-600 text-slate-300 hover:bg-slate-800"
+                    disabled={reverting || managing}
+                    onClick={() => onRevert(step.id)}
+                  >
+                    {reverting ? (
+                      'Revertendo...'
+                    ) : (
+                      <>
+                        <RotateCcw className="mr-1 h-4 w-4" />
+                        Voltar passo (−{step.xpReward} XP)
+                      </>
+                    )}
+                  </Button>
+                )}
+              </>
             ) : locked ? (
               <Button
                 className="w-full border border-slate-600 bg-slate-800/50 text-slate-400"
                 disabled
               >
-                🔒 Complete a missão anterior
+                Complete a missão anterior
               </Button>
             ) : (
               <Button

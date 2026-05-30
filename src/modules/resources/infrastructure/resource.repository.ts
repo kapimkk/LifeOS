@@ -9,6 +9,7 @@ function serialize(r: {
   title: string;
   url: string;
   description: string | null;
+  vaultCategory: 'ESTUDOS' | 'LAZER' | 'FERRAMENTAS';
   category: string | null;
   status: 'TO_READ' | 'IN_PROGRESS' | 'DONE' | 'ARCHIVED';
   createdAt: Date;
@@ -18,9 +19,12 @@ function serialize(r: {
 }
 
 export const resourceRepository = {
-  async findByUserId(userId: string): Promise<SerializedResource[]> {
+  async findByUserId(
+    userId: string,
+    vaultCategory?: 'ESTUDOS' | 'LAZER' | 'FERRAMENTAS',
+  ): Promise<SerializedResource[]> {
     const items = await prisma.resource.findMany({
-      where: { userId },
+      where: { userId, ...(vaultCategory && { vaultCategory }) },
       orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
     });
     return items.map(serialize);
@@ -33,6 +37,7 @@ export const resourceRepository = {
         title: data.title,
         url: data.url,
         description: data.description ?? null,
+        vaultCategory: data.vaultCategory,
         category: data.category ?? null,
         status: data.status,
       },
@@ -52,6 +57,7 @@ export const resourceRepository = {
         ...(data.title !== undefined && { title: data.title }),
         ...(data.url !== undefined && { url: data.url }),
         ...(data.description !== undefined && { description: data.description ?? null }),
+        ...(data.vaultCategory !== undefined && { vaultCategory: data.vaultCategory }),
         ...(data.category !== undefined && { category: data.category ?? null }),
         ...(data.status !== undefined && { status: data.status }),
       },
@@ -73,15 +79,6 @@ export const resourceRepository = {
   async remove(userId: string, id: string): Promise<void> {
     await this.assertOwnership(userId, id);
     await prisma.resource.delete({ where: { id } });
-  },
-
-  async categories(userId: string): Promise<string[]> {
-    const rows = await prisma.resource.findMany({
-      where: { userId, category: { not: null } },
-      select: { category: true },
-      distinct: ['category'],
-    });
-    return rows.map((r) => r.category!).sort();
   },
 
   async assertOwnership(userId: string, id: string): Promise<void> {

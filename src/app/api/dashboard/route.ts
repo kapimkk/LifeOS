@@ -1,53 +1,56 @@
 import { handleApiError, ok } from '@/lib/api';
-import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/shared/auth/session';
-import { getGoalStatsQuery } from '@/modules/goals/application/queries/list-goals.query';
+import { listJourneysQuery } from '@/modules/journey/application/queries/list-journeys.query';
+import { serializeJourney } from '@/modules/journey/interfaces/serialize-journey';
+import { computeEarnedXp, computeTotalXpAvailable } from '@/modules/journey/domain/xp-progress';
 import {
-  getHabitsTodaySummaryQuery,
-  listHabitsWithStatsQuery,
-} from '@/modules/habits/application/queries/list-habits.query';
-import {
-  getMonthlySummaryQuery,
-  getBalanceAllTimeQuery,
-  getMonthlySeriesQuery,
-  getByCategoryQuery,
-} from '@/modules/finance/application/queries/list-transactions.query';
+  getInvestmentStatsQuery,
+  listInvestmentsQuery,
+} from '@/modules/finance/application/queries/list-investments.query';
 
 export async function GET() {
   try {
     const user = await requireUser();
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
 
-    const [
-      monthly,
-      allTime,
-      monthlySeries,
-      byCategory,
-      goalStats,
-      activeGoals,
-      habitsToday,
-      habits,
-    ] = await Promise.all([
-      getMonthlySummaryQuery(user.id, year, month),
-      getBalanceAllTimeQuery(user.id),
-      getMonthlySeriesQuery(user.id, 6),
-      getByCategoryQuery(user.id, year, month),
-      getGoalStatsQuery(user.id),
-      prisma.goal.findMany({
-        where: { userId: user.id, status: 'ACTIVE' },
-        orderBy: [{ priority: 'desc' }, { deadline: 'asc' }],
-        take: 4,
-      }),
-      getHabitsTodaySummaryQuery(user.id, user.timezone ?? 'UTC'),
-      listHabitsWithStatsQuery(user.id, user.timezone ?? 'UTC'),
+    const [journeyRows, investments, investmentStats] = await Promise.all([
+      listJourneysQuery(user.id),
+      listInvestmentsQuery(user.id),
+      getInvestmentStatsQuery(user.id),
     ]);
 
+    const journeys = journeyRows.map((j) => {
+      const serialized = serializeJourney({
+        id: j.id,
+        userId: j.userId,
+        name: j.name,
+        description: j.description,
+        createdAt: j.createdAt,
+        steps: j.steps.map((s) => ({
+          id: s.id,
+          journeyId: s.journeyId,
+          title: s.title,
+          description: s.description,
+          url: s.url,
+          instructor: s.instructor,
+          difficulty: s.difficulty,
+          xpReward: s.xpReward,
+          order: s.order,
+          status: s.status as 'LOCKED' | 'IN_PROGRESS' | 'COMPLETED',
+        })),
+      });
+      const steps = [...serialized.steps].sort((a, b) => a.order - b.order);
+      return {
+        ...serialized,
+        earnedXp: computeEarnedXp(steps),
+        totalXp: computeTotalXpAvailable(steps),
+        completedSteps: steps.filter((s) => s.status === 'COMPLETED').length,
+        totalSteps: steps.length,
+      };
+    });
+
     return ok({
-      finance: { monthly, allTime, monthlySeries, byCategory },
-      goals: { stats: goalStats, top: activeGoals },
-      habits: { today: habitsToday, list: habits.slice(0, 6) },
+      journey: { list: journeys },
+      investments: { list: investments, stats: investmentStats },
     });
   } catch (err) {
     return handleApiError(err);

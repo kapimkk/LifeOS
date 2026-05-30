@@ -4,20 +4,14 @@ import { PageHeader } from '@/components/layout/page-header';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { ResourcesClient } from './resources-client';
 import { requireUser } from '@/shared/auth/session';
-import {
-  listResourcesQuery,
-  listResourceCategoriesQuery,
-} from '@/modules/resources/application/queries/list-resources.query';
+import { listResourcesQuery } from '@/modules/resources/application/queries/list-resources.query';
 
 export const metadata: Metadata = { title: 'Recursos' };
 export const dynamic = 'force-dynamic';
 
 export default async function ResourcesPage() {
   const user = await requireUser();
-  const [items, categories] = await Promise.all([
-    listResourcesQuery(user.id),
-    listResourceCategoriesQuery(user.id),
-  ]);
+  const items = await listResourcesQuery(user.id);
 
   const total = items.length;
   const done = items.filter((r) => r.status === 'DONE').length;
@@ -27,7 +21,7 @@ export default async function ResourcesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Cofre de recursos"
-        description="Guarde links, artigos, vídeos e cursos para ver depois."
+        description="Guarde links por categoria: Estudos, Lazer ou Ferramentas."
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -36,7 +30,7 @@ export default async function ResourcesPage() {
         <StatCard label="Concluídos" value={String(done)} icon={<CheckCheck />} accent="success" />
       </div>
 
-      <ResourcesClient initialResources={items} initialCategories={categories} />
+      <ResourcesClient initialResources={items} />
     </div>
   );
 }

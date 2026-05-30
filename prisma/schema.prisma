@@ -79,6 +79,12 @@ enum ResourceStatus {
   ARCHIVED
 }
 
+enum ResourceVaultCategory {
+  ESTUDOS
+  LAZER
+  FERRAMENTAS
+}
+
 enum JourneyStepStatus {
   LOCKED
   IN_PROGRESS
@@ -317,19 +323,23 @@ model Investment {
 // ----------------------------------------------------------
 
 model Resource {
-  id          String         @id @default(cuid())
-  userId      String
-  title       String
-  url         String
-  description String?
-  category    String?        // Artigo, Vídeo, Curso, Livro, Podcast, ...
-  status      ResourceStatus @default(TO_READ)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id            String               @id @default(cuid())
+  userId        String
+  title         String
+  url           String
+  description   String?
+  // Categoria principal: Estudos, Lazer ou Ferramentas
+  vaultCategory ResourceVaultCategory @default(ESTUDOS)
+  // Rótulo legado opcional (Artigo, Vídeo, etc.)
+  category      String?
+  status        ResourceStatus       @default(TO_READ)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
+  @@index([userId, vaultCategory])
 }
 
 // ----------------------------------------------------------
