@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
-import { CheckCircle2, CreditCard, Target, TrendingUp, Wallet } from 'lucide-react';
+import { CreditCard, Target, TrendingUp, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { IncomeExpenseChart } from '@/components/dashboard/income-expense-chart';
 import { CategoryChart } from '@/components/dashboard/category-chart';
 import { HabitsToday } from '@/components/dashboard/habits-today';
 import { ActiveGoals } from '@/components/dashboard/active-goals';
-import { PendingTasks } from '@/components/dashboard/pending-tasks';
 import { MoodTracker } from '@/components/dashboard/mood-tracker';
 import { MoodHeatmap } from '@/components/dashboard/mood-heatmap';
 import { requireUser } from '@/shared/auth/session';
@@ -18,10 +17,6 @@ import {
   listHabitsWithStatsQuery,
   getHabitsTodaySummaryQuery,
 } from '@/modules/habits/application/queries/list-habits.query';
-import {
-  getTaskStatsQuery,
-  listTasksQuery,
-} from '@/modules/tasks/application/queries/list-tasks.query';
 import {
   getMonthlySummaryQuery,
   getMonthlySeriesQuery,
@@ -46,8 +41,6 @@ export default async function DashboardPage() {
     byCategory,
     goalStats,
     activeGoals,
-    taskStats,
-    pendingTasks,
     habitsToday,
     habits,
     todayMood,
@@ -58,8 +51,6 @@ export default async function DashboardPage() {
     getByCategoryQuery(user.id, year, month),
     getGoalStatsQuery(user.id),
     listGoalsQuery(user.id, 'ACTIVE').then((gs) => gs.slice(0, 4)),
-    getTaskStatsQuery(user.id),
-    listTasksQuery(user.id).then((ts) => ts.filter((t) => t.status !== 'DONE').slice(0, 5)),
     getHabitsTodaySummaryQuery(user.id, tz),
     listHabitsWithStatsQuery(user.id, tz),
     getTodayMood(),
@@ -139,7 +130,7 @@ export default async function DashboardPage() {
         <CategoryChart data={byCategory} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         <HabitsToday
           habits={habits.map((h) => ({
             id: h.id,
@@ -160,16 +151,9 @@ export default async function DashboardPage() {
             deadline: g.deadline,
           }))}
         />
-        <PendingTasks tasks={pendingTasks} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Tarefas concluídas"
-          value={`${taskStats.done}`}
-          icon={<CheckCircle2 />}
-          accent="success"
-        />
+      <div className="grid gap-4 sm:grid-cols-2">
         <StatCard
           label="Hábitos hoje"
           value={`${habitsToday.done}/${habitsToday.active}`}
@@ -184,7 +168,6 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Diário de Humor */}
       <div className="grid gap-4 lg:grid-cols-3">
         <MoodTracker todayMood={todayMood} />
         <div className="lg:col-span-2">

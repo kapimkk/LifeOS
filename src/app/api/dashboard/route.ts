@@ -6,7 +6,6 @@ import {
   getHabitsTodaySummaryQuery,
   listHabitsWithStatsQuery,
 } from '@/modules/habits/application/queries/list-habits.query';
-import { getTaskStatsQuery } from '@/modules/tasks/application/queries/list-tasks.query';
 import {
   getMonthlySummaryQuery,
   getBalanceAllTimeQuery,
@@ -28,8 +27,6 @@ export async function GET() {
       byCategory,
       goalStats,
       activeGoals,
-      taskStats,
-      pendingTasks,
       habitsToday,
       habits,
     ] = await Promise.all([
@@ -43,12 +40,6 @@ export async function GET() {
         orderBy: [{ priority: 'desc' }, { deadline: 'asc' }],
         take: 4,
       }),
-      getTaskStatsQuery(user.id),
-      prisma.task.findMany({
-        where: { userId: user.id, status: { not: 'DONE' } },
-        orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
-        take: 5,
-      }),
       getHabitsTodaySummaryQuery(user.id, user.timezone ?? 'UTC'),
       listHabitsWithStatsQuery(user.id, user.timezone ?? 'UTC'),
     ]);
@@ -56,7 +47,6 @@ export async function GET() {
     return ok({
       finance: { monthly, allTime, monthlySeries, byCategory },
       goals: { stats: goalStats, top: activeGoals },
-      tasks: { stats: taskStats, pending: pendingTasks },
       habits: { today: habitsToday, list: habits.slice(0, 6) },
     });
   } catch (err) {

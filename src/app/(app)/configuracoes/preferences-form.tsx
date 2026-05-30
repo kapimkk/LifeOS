@@ -51,10 +51,7 @@ export function PreferencesForm({ defaults }: { defaults: Defaults }) {
           <Label className="text-sm font-medium">Tema</Label>
           <p className="text-xs text-muted-foreground">Escolha como o LifeOS deve aparecer</p>
         </div>
-        <Select
-          value={prefs.theme}
-          onValueChange={(v) => update('theme', v as Defaults['theme'])}
-        >
+        <Select value={prefs.theme} onValueChange={(v) => update('theme', v as Defaults['theme'])}>
           <SelectTrigger className="w-[160px]">
             <SelectValue />
           </SelectTrigger>
@@ -75,17 +72,14 @@ export function PreferencesForm({ defaults }: { defaults: Defaults }) {
             Receba um resumo da sua semana toda segunda-feira
           </p>
         </div>
-        <Switch
-          checked={prefs.weeklyDigest}
-          onCheckedChange={(v) => update('weeklyDigest', v)}
-        />
+        <Switch checked={prefs.weeklyDigest} onCheckedChange={(v) => update('weeklyDigest', v)} />
       </div>
 
       <div className="flex items-center justify-between">
         <div>
           <Label className="text-sm font-medium">Lembretes por e-mail</Label>
           <p className="text-xs text-muted-foreground">
-            Notificações sobre hábitos, metas e tarefas
+            Notificações sobre hábitos, metas e jornada
           </p>
         </div>
         <Switch
@@ -99,10 +93,7 @@ export function PreferencesForm({ defaults }: { defaults: Defaults }) {
           <Label className="text-sm font-medium">Lembretes push</Label>
           <p className="text-xs text-muted-foreground">Avisos no navegador</p>
         </div>
-        <Switch
-          checked={prefs.pushReminders}
-          onCheckedChange={(v) => update('pushReminders', v)}
-        />
+        <Switch checked={prefs.pushReminders} onCheckedChange={(v) => update('pushReminders', v)} />
       </div>
     </div>
   );

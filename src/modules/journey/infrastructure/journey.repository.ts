@@ -1,7 +1,12 @@
 import 'server-only';
 import type { JourneyStepStatus as PrismaStepStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import type { JourneyInput, JourneyStepInput } from '@/lib/validators/journey';
+import type {
+  JourneyInput,
+  JourneyStepInput,
+  UpdateJourneyStepInput,
+} from '@/lib/validators/journey';
+import { compactStepOrders } from '../domain/reorder-steps';
 import {
   assertCanCompleteStep,
   initialStatusForNewStep,
@@ -148,6 +153,62 @@ export const journeyRepository = {
     return step.journeyId;
   },
 
+  async updateJourney(userId: string, journeyId: string, data: JourneyInput) {
+    await this.assertJourneyOwnership(userId, journeyId);
+    return prisma.journey.update({
+      where: { id: journeyId },
+      data: {
+        name: data.name,
+        description: data.description ?? null,
+      },
+    });
+  },
+
+  async deleteJourney(userId: string, journeyId: string) {
+    await this.assertJourneyOwnership(userId, journeyId);
+    await prisma.journey.delete({ where: { id: journeyId } });
+  },
+
+  async updateStep(userId: string, stepId: string, data: UpdateJourneyStepInput) {
+    const step = await this.assertStepOwnership(userId, stepId);
+    return prisma.journeyStep.update({
+      where: { id: stepId },
+      data: {
+        title: data.title,
+        description: data.description ?? null,
+        url: data.url && data.url.length > 0 ? data.url : null,
+        instructor: data.instructor ?? null,
+        difficulty: data.difficulty,
+        xpReward: data.xpReward,
+      },
+    });
+  },
+
+  async deleteStep(userId: string, stepId: string): Promise<{ id: string; journeyId: string }> {
+    const step = await this.assertStepOwnership(userId, stepId);
+    const journeyId = step.journeyId;
+
+    await prisma.journeyStep.delete({ where: { id: stepId } });
+
+    const remaining = await prisma.journeyStep.findMany({
+      where: { journeyId },
+      orderBy: { order: 'asc' },
+      select: { id: true, order: true },
+    });
+
+    const compacted = compactStepOrders(remaining);
+    if (compacted.length > 0) {
+      await prisma.$transaction(
+        compacted.map(({ id, order }) =>
+          prisma.journeyStep.update({ where: { id }, data: { order } }),
+        ),
+      );
+    }
+
+    await this.syncStepStatuses(journeyId);
+    return { id: stepId, journeyId };
+  },
+
   async assertJourneyOwnership(userId: string, journeyId: string) {
     const found = await prisma.journey.findFirst({
       where: { id: journeyId, userId },
@@ -158,5 +219,18 @@ export const journeyRepository = {
       err.status = 404;
       throw err;
     }
+  },
+
+  async assertStepOwnership(userId: string, stepId: string) {
+    const step = await prisma.journeyStep.findUnique({
+      where: { id: stepId },
+      include: { journey: { select: { userId: true } } },
+    });
+    if (!step || step.journey.userId !== userId) {
+      const err = new Error('Passo não encontrado') as Error & { status?: number };
+      err.status = 404;
+      throw err;
+    }
+    return step;
   },
 };

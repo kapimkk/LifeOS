@@ -97,18 +97,6 @@ async function main() {
     });
   }
 
-  const tasksExist = await prisma.task.count({ where: { userId: user.id } });
-  if (tasksExist === 0) {
-    await prisma.task.createMany({
-      data: [
-        { userId: user.id, title: 'Revisar orçamento do mês', priority: 'HIGH' },
-        { userId: user.id, title: 'Estudar TypeScript avançado', priority: 'MEDIUM' },
-        { userId: user.id, title: 'Agendar consulta médica', priority: 'LOW' },
-        { userId: user.id, title: 'Planejar viagem do feriado', priority: 'MEDIUM' },
-      ],
-    });
-  }
-
   const investmentsExist = await prisma.investment.count({ where: { userId: user.id } });
   if (investmentsExist === 0) {
     await prisma.investment.createMany({

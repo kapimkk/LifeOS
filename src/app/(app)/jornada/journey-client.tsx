@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { Compass, Map, Plus, Swords } from 'lucide-react';
+import { Compass, Map, Plus, Swords, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
@@ -12,24 +12,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { SerializedJourney } from '@/modules/journey/domain/entities';
+import { computeEarnedXp, computeTotalXpAvailable } from '@/modules/journey/domain/xp-progress';
+import type { SerializedJourney, SerializedJourneyStep } from '@/modules/journey/domain/entities';
 import {
   addStepToJourneyAction,
   completeStepAction,
   createJourneyAction,
+  deleteJourneyAction,
+  deleteStepAction,
+  updateJourneyAction,
+  updateStepAction,
 } from '@/modules/journey/interfaces/journey-actions';
+import { JourneyHeaderControls } from '@/modules/journey/interfaces/components/journey-header-controls';
+import { DeleteConfirmDialog } from '@/modules/journey/interfaces/components/delete-confirm-dialog';
 import { JourneyStepCard } from './journey-step-card';
-import { AddStepDialog, CreateJourneyDialog } from './journey-dialogs';
+import {
+  AddStepDialog,
+  CreateJourneyDialog,
+  EditJourneyDialog,
+  EditStepDialog,
+} from './journey-dialogs';
 
 interface Props {
   initialJourneys: SerializedJourney[];
 }
 
+type DeleteTarget =
+  | { type: 'journey'; journey: SerializedJourney }
+  | { type: 'step'; step: SerializedJourneyStep; journeyId: string };
+
 export function JourneyClient({ initialJourneys }: Props) {
   const [journeys, setJourneys] = useState(initialJourneys);
   const [selectedId, setSelectedId] = useState(initialJourneys[0]?.id ?? '');
   const [createOpen, setCreateOpen] = useState(false);
+  const [editJourneyOpen, setEditJourneyOpen] = useState(false);
   const [stepOpen, setStepOpen] = useState(false);
+  const [editStep, setEditStep] = useState<SerializedJourneyStep | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -43,10 +62,12 @@ export function JourneyClient({ initialJourneys }: Props) {
     [active],
   );
 
-  const totalXp = useMemo(
-    () => sortedSteps.filter((s) => s.status === 'COMPLETED').reduce((a, s) => a + s.xpReward, 0),
-    [sortedSteps],
-  );
+  const earnedXp = useMemo(() => computeEarnedXp(sortedSteps), [sortedSteps]);
+  const totalXp = useMemo(() => computeTotalXpAvailable(sortedSteps), [sortedSteps]);
+
+  function replaceJourney(updated: SerializedJourney) {
+    setJourneys((prev) => prev.map((j) => (j.id === updated.id ? updated : j)));
+  }
 
   async function handleCreateJourney(data: Parameters<typeof createJourneyAction>[0]) {
     const res = await createJourneyAction(data);
@@ -60,15 +81,39 @@ export function JourneyClient({ initialJourneys }: Props) {
     toast.success('Jornada criada');
   }
 
+  async function handleUpdateJourney(data: Parameters<typeof updateJourneyAction>[1]) {
+    if (!active) return;
+    const res = await updateJourneyAction(active.id, data);
+    if (!res.success) {
+      toast.error(res.error);
+      return;
+    }
+    replaceJourney(res.data);
+    setEditJourneyOpen(false);
+    toast.success('Jornada atualizada');
+  }
+
   async function handleAddStep(data: Parameters<typeof addStepToJourneyAction>[0]) {
     const res = await addStepToJourneyAction(data);
     if (!res.success) {
       toast.error(res.error);
       return;
     }
-    setJourneys((prev) => prev.map((j) => (j.id === res.data.id ? res.data : j)));
+    replaceJourney(res.data);
     setStepOpen(false);
     toast.success('Passo adicionado');
+  }
+
+  async function handleUpdateStep(data: Parameters<typeof updateStepAction>[1]) {
+    if (!editStep) return;
+    const res = await updateStepAction(editStep.id, data);
+    if (!res.success) {
+      toast.error(res.error);
+      return;
+    }
+    replaceJourney(res.data);
+    setEditStep(null);
+    toast.success('Missão atualizada');
   }
 
   function handleComplete(stepId: string) {
@@ -80,9 +125,35 @@ export function JourneyClient({ initialJourneys }: Props) {
         setCompletingId(null);
         return;
       }
-      setJourneys((prev) => prev.map((j) => (j.id === res.data.id ? res.data : j)));
-      toast.success('Missão concluída! +XP');
+      replaceJourney(res.data);
+      const step = res.data.steps.find((s) => s.id === stepId);
+      toast.success(`Missão concluída! +${step?.xpReward ?? 0} XP`);
       setCompletingId(null);
+    });
+  }
+
+  function confirmDelete() {
+    if (!deleteTarget) return;
+    startTransition(async () => {
+      if (deleteTarget.type === 'journey') {
+        const res = await deleteJourneyAction(deleteTarget.journey.id);
+        if (!res.success) {
+          toast.error(res.error);
+          return;
+        }
+        setJourneys(res.data.journeys);
+        setSelectedId(res.data.journeys[0]?.id ?? '');
+        toast.success('Jornada excluída');
+      } else {
+        const res = await deleteStepAction(deleteTarget.step.id);
+        if (!res.success) {
+          toast.error(res.error);
+          return;
+        }
+        replaceJourney(res.data);
+        toast.success('Missão removida');
+      }
+      setDeleteTarget(null);
     });
   }
 
@@ -135,14 +206,30 @@ export function JourneyClient({ initialJourneys }: Props) {
               </SelectContent>
             </Select>
             {active && (
-              <p className="text-xs text-amber-300/90">
-                XP conquistado: <strong>{totalXp}</strong>
-              </p>
+              <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-sm">
+                <Zap className="h-4 w-4 text-yellow-400" />
+                <span className="text-amber-100">
+                  <strong className="text-yellow-400">{earnedXp}</strong>
+                  <span className="text-amber-200/80"> / {totalXp} XP</span>
+                </span>
+              </div>
             )}
           </div>
 
-          {active?.description && (
-            <p className="max-w-lg text-sm text-muted-foreground">{active.description}</p>
+          {active && (
+            <div className="mx-auto flex max-w-lg items-start justify-between gap-3 rounded-xl border border-cyan-500/20 bg-slate-900/50 px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-lg font-semibold text-slate-50">{active.name}</h2>
+                {active.description && (
+                  <p className="mt-1 text-sm text-muted-foreground">{active.description}</p>
+                )}
+              </div>
+              <JourneyHeaderControls
+                disabled={isPending}
+                onEdit={() => setEditJourneyOpen(true)}
+                onDelete={() => setDeleteTarget({ type: 'journey', journey: active })}
+              />
+            </div>
           )}
 
           <div className="relative mx-auto flex max-w-lg flex-col items-center py-4">
@@ -164,7 +251,16 @@ export function JourneyClient({ initialJourneys }: Props) {
                       index={i}
                       total={sortedSteps.length}
                       completing={completingId === step.id && isPending}
+                      managing={isPending}
                       onComplete={handleComplete}
+                      onEdit={(s) => setEditStep(s)}
+                      onDelete={(s) =>
+                        setDeleteTarget({
+                          type: 'step',
+                          step: s,
+                          journeyId: active!.id,
+                        })
+                      }
                     />
                   </li>
                 ))}
@@ -180,12 +276,38 @@ export function JourneyClient({ initialJourneys }: Props) {
         onSubmit={handleCreateJourney}
         submitting={isPending}
       />
+      <EditJourneyDialog
+        open={editJourneyOpen}
+        onOpenChange={setEditJourneyOpen}
+        journey={active}
+        onSubmit={handleUpdateJourney}
+        submitting={isPending}
+      />
       <AddStepDialog
         open={stepOpen}
         onOpenChange={setStepOpen}
         journeyId={active?.id ?? null}
         onSubmit={handleAddStep}
         submitting={isPending}
+      />
+      <EditStepDialog
+        open={Boolean(editStep)}
+        onOpenChange={(v) => !v && setEditStep(null)}
+        step={editStep}
+        onSubmit={handleUpdateStep}
+        submitting={isPending}
+      />
+      <DeleteConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(v) => !v && setDeleteTarget(null)}
+        title={deleteTarget?.type === 'journey' ? 'Excluir jornada?' : 'Excluir missão?'}
+        description={
+          deleteTarget?.type === 'journey'
+            ? `A jornada "${deleteTarget.journey.name}" e todos os passos serão removidos permanentemente.`
+            : `A missão "${deleteTarget?.type === 'step' ? deleteTarget.step.title : ''}" será removida e a trilha será reordenada.`
+        }
+        loading={isPending}
+        onConfirm={confirmDelete}
       />
     </div>
   );

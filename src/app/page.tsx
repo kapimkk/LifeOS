@@ -8,6 +8,7 @@ import {
   BarChart3,
   BookOpen,
   CheckCircle2,
+  Compass,
   Flame,
   Lock,
   ShieldCheck,
@@ -72,13 +73,25 @@ function FinancePreview() {
           { desc: 'Netflix', cat: 'Lazer', val: '-45', income: false },
           { desc: 'Academia', cat: 'Saúde', val: '-90', income: false },
         ].map((t) => (
-          <div key={t.desc} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted/40">
-            <div className={cn('h-6 w-6 rounded-md flex items-center justify-center shrink-0', t.income ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400')}>
+          <div
+            key={t.desc}
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-muted/40"
+          >
+            <div
+              className={cn(
+                'flex h-6 w-6 shrink-0 items-center justify-center rounded-md',
+                t.income ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400',
+              )}
+            >
               {t.income ? <TrendingUp className="h-3 w-3" /> : <Wallet className="h-3 w-3" />}
             </div>
             <span className="flex-1 font-medium">{t.desc}</span>
-            <Badge variant="outline" className="hidden text-[9px] sm:flex">{t.cat}</Badge>
-            <span className={cn('font-semibold', t.income ? 'text-emerald-400' : 'text-red-400')}>{t.val}</span>
+            <Badge variant="outline" className="hidden text-[9px] sm:flex">
+              {t.cat}
+            </Badge>
+            <span className={cn('font-semibold', t.income ? 'text-emerald-400' : 'text-red-400')}>
+              {t.val}
+            </span>
           </div>
         ))}
       </div>
@@ -98,11 +111,16 @@ function GoalsPreview() {
         <div key={g.title} className="rounded-lg border border-border/50 bg-muted/30 p-2.5">
           <div className="mb-1.5 flex items-center justify-between gap-2">
             <p className="truncate text-xs font-medium">{g.title}</p>
-            <Badge variant="outline" className="shrink-0 text-[9px]">{g.cat}</Badge>
+            <Badge variant="outline" className="shrink-0 text-[9px]">
+              {g.cat}
+            </Badge>
           </div>
           <div className="flex items-center gap-2">
             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-              <div className="h-full rounded-full" style={{ width: `${g.pct}%`, backgroundColor: g.color }} />
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${g.pct}%`, backgroundColor: g.color }}
+              />
             </div>
             <span className="text-[10px] font-semibold text-muted-foreground">{g.pct}%</span>
           </div>
@@ -121,8 +139,20 @@ function HabitsPreview() {
         { title: 'Meditar', streak: 3, done: false, color: '#f59e0b' },
         { title: 'Treinar', streak: 21, done: true, color: '#22c55e' },
       ].map((h) => (
-        <div key={h.title} className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
-          <div className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-all')} style={h.done ? { backgroundColor: h.color, borderColor: h.color } : { borderColor: 'hsl(var(--border))' }}>
+        <div
+          key={h.title}
+          className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2"
+        >
+          <div
+            className={cn(
+              'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-all',
+            )}
+            style={
+              h.done
+                ? { backgroundColor: h.color, borderColor: h.color }
+                : { borderColor: 'hsl(var(--border))' }
+            }
+          >
             {h.done && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
           </div>
           <span className="flex-1 text-xs font-medium">{h.title}</span>
@@ -142,57 +172,86 @@ const features = [
   {
     icon: Wallet,
     title: 'Controle financeiro completo',
-    description: 'Receitas, despesas, categorias e gráficos. Entenda para onde vai cada real do seu bolso.',
+    description:
+      'Receitas, despesas, categorias e gráficos. Entenda para onde vai cada real do seu bolso.',
     color: 'from-emerald-500/20 to-emerald-500/5',
     iconColor: 'text-emerald-400',
   },
   {
     icon: Target,
     title: 'Metas com propósito',
-    description: 'Defina objetivos pessoais, financeiros, fitness e carreira. Veja seu progresso em tempo real.',
+    description:
+      'Defina objetivos pessoais, financeiros, fitness e carreira. Veja seu progresso em tempo real.',
     color: 'from-indigo-500/20 to-indigo-500/5',
     iconColor: 'text-indigo-400',
   },
   {
     icon: Flame,
     title: 'Hábitos que ficam',
-    description: 'Construa rotinas com checks diários, foguinho de sequência e calendário de consistência.',
+    description:
+      'Construa rotinas com checks diários, foguinho de sequência e calendário de consistência.',
     color: 'from-amber-500/20 to-amber-500/5',
     iconColor: 'text-amber-400',
   },
   {
-    icon: CheckCircle2,
-    title: 'Produtividade sem esforço',
-    description: 'Lista de tarefas com prioridades e prazos. Foco em concluir, não só em anotar.',
+    icon: Compass,
+    title: 'Jornada gamificada',
+    description:
+      'Trilhas de estudo com missões, XP e desbloqueio progressivo — evolua como em um RPG.',
     color: 'from-sky-500/20 to-sky-500/5',
     iconColor: 'text-sky-400',
   },
   {
     icon: BarChart3,
     title: 'Visão panorâmica',
-    description: 'Dashboard unificado com resumo financeiro, hábitos do dia, metas e tarefas pendentes.',
+    description: 'Dashboard unificado com resumo financeiro, hábitos do dia, metas e jornada.',
     color: 'from-violet-500/20 to-violet-500/5',
     iconColor: 'text-violet-400',
   },
   {
     icon: BookOpen,
     title: 'Cofre de recursos',
-    description: 'Salve artigos, cursos e vídeos para ver depois. Filtre por categoria e marque como lido.',
+    description:
+      'Salve artigos, cursos e vídeos para ver depois. Filtre por categoria e marque como lido.',
     color: 'from-rose-500/20 to-rose-500/5',
     iconColor: 'text-rose-400',
   },
 ];
 
 const pillars = [
-  { icon: ShieldCheck, title: 'Segurança máxima', desc: 'Seus dados protegidos com criptografia de ponta a ponta e autenticação segura.' },
-  { icon: Zap, title: 'Velocidade instantânea', desc: 'Interface fluida que responde em milissegundos, sem carregamentos que interrompem seu foco.' },
-  { icon: Lock, title: 'Privacidade total', desc: 'Você é dono dos seus dados. Nada é compartilhado ou vendido a terceiros, jamais.' },
+  {
+    icon: ShieldCheck,
+    title: 'Segurança máxima',
+    desc: 'Seus dados protegidos com criptografia de ponta a ponta e autenticação segura.',
+  },
+  {
+    icon: Zap,
+    title: 'Velocidade instantânea',
+    desc: 'Interface fluida que responde em milissegundos, sem carregamentos que interrompem seu foco.',
+  },
+  {
+    icon: Lock,
+    title: 'Privacidade total',
+    desc: 'Você é dono dos seus dados. Nada é compartilhado ou vendido a terceiros, jamais.',
+  },
 ];
 
 const steps = [
-  { num: '01', title: 'Crie sua conta', desc: 'Cadastro em menos de 1 minuto. Sem cartão de crédito.' },
-  { num: '02', title: 'Configure seu perfil', desc: 'Adicione suas finanças, crie metas e defina seus hábitos.' },
-  { num: '03', title: 'Evolua todo dia', desc: 'Acompanhe seu progresso no dashboard e sinta a diferença.' },
+  {
+    num: '01',
+    title: 'Crie sua conta',
+    desc: 'Cadastro em menos de 1 minuto. Sem cartão de crédito.',
+  },
+  {
+    num: '02',
+    title: 'Configure seu perfil',
+    desc: 'Adicione suas finanças, crie metas e defina seus hábitos.',
+  },
+  {
+    num: '03',
+    title: 'Evolua todo dia',
+    desc: 'Acompanhe seu progresso no dashboard e sinta a diferença.',
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -211,7 +270,10 @@ export default function HomePage() {
             <span className="text-lg font-bold tracking-tight">LifeOS</span>
           </Link>
           <nav className="flex items-center gap-2 sm:gap-3">
-            <Link href="/login" className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:block">
+            <Link
+              href="/login"
+              className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
+            >
               Entrar
             </Link>
             <Button asChild size="sm" className="gap-1.5">
@@ -237,20 +299,33 @@ export default function HomePage() {
             </Badge>
           </motion.div>
 
-          <motion.h1 {...fadeUp(0.08)} className="mx-auto max-w-4xl text-balance text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
+          <motion.h1
+            {...fadeUp(0.08)}
+            className="mx-auto max-w-4xl text-balance text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl"
+          >
             O painel de controle da{' '}
             <span className="bg-gradient-to-r from-primary via-violet-400 to-primary bg-clip-text text-transparent">
               sua vida
             </span>
           </motion.h1>
 
-          <motion.p {...fadeUp(0.16)} className="mx-auto mt-6 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg lg:text-xl">
+          <motion.p
+            {...fadeUp(0.16)}
+            className="mx-auto mt-6 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg lg:text-xl"
+          >
             Finanças, metas, hábitos e produtividade — reunidos em um único lugar com clareza,
             organização e foco. Pare de gerenciar sua vida em planilhas.
           </motion.p>
 
-          <motion.div {...fadeUp(0.24)} className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button asChild size="lg" className="h-12 gap-2 px-8 text-base font-semibold shadow-lg shadow-primary/30">
+          <motion.div
+            {...fadeUp(0.24)}
+            className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
+          >
+            <Button
+              asChild
+              size="lg"
+              className="h-12 gap-2 px-8 text-base font-semibold shadow-lg shadow-primary/30"
+            >
               <Link href="/register">
                 Começar agora — é grátis
                 <ArrowRight className="h-4 w-4" />
@@ -269,13 +344,19 @@ export default function HomePage() {
           </motion.p>
 
           {/* Floating stats */}
-          <motion.div {...fadeUp(0.36)} className="mx-auto mt-14 grid max-w-lg grid-cols-3 gap-4 sm:max-w-xl">
+          <motion.div
+            {...fadeUp(0.36)}
+            className="mx-auto mt-14 grid max-w-lg grid-cols-3 gap-4 sm:max-w-xl"
+          >
             {[
               { label: 'Módulos integrados', value: '6+' },
               { label: 'Configuração', value: '< 2min' },
               { label: 'Dados seguros', value: '100%' },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl border border-border/60 bg-card/60 p-4 backdrop-blur">
+              <div
+                key={s.label}
+                className="rounded-xl border border-border/60 bg-card/60 p-4 backdrop-blur"
+              >
                 <p className="text-2xl font-extrabold text-primary">{s.value}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">{s.label}</p>
               </div>
@@ -297,7 +378,12 @@ export default function HomePage() {
 
         <div className="grid gap-6 md:grid-cols-3">
           {[
-            { title: 'Finanças', icon: Wallet, color: 'text-emerald-400', preview: <FinancePreview /> },
+            {
+              title: 'Finanças',
+              icon: Wallet,
+              color: 'text-emerald-400',
+              preview: <FinancePreview />,
+            },
             { title: 'Metas', icon: Target, color: 'text-indigo-400', preview: <GoalsPreview /> },
             { title: 'Hábitos', icon: Flame, color: 'text-amber-400', preview: <HabitsPreview /> },
           ].map((m, i) => (
@@ -315,14 +401,12 @@ export default function HomePage() {
                     <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/70" />
                     <div className="h-2.5 w-2.5 rounded-full bg-green-400/70" />
                   </div>
-                  <div className="flex items-center gap-1.5 ml-2">
+                  <div className="ml-2 flex items-center gap-1.5">
                     <m.icon className={cn('h-3.5 w-3.5', m.color)} />
                     <span className="text-xs font-medium text-muted-foreground">{m.title}</span>
                   </div>
                 </div>
-                <CardContent className="p-4">
-                  {m.preview}
-                </CardContent>
+                <CardContent className="p-4">{m.preview}</CardContent>
               </Card>
             </motion.div>
           ))}
@@ -350,9 +434,19 @@ export default function HomePage() {
                 transition={{ delay: i * 0.07, duration: 0.45 }}
                 className="group relative overflow-hidden rounded-xl border border-border/60 bg-card/60 p-6 backdrop-blur transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
               >
-                <div className={cn('absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity group-hover:opacity-100', f.color)} />
+                <div
+                  className={cn(
+                    'absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity group-hover:opacity-100',
+                    f.color,
+                  )}
+                />
                 <div className="relative">
-                  <div className={cn('mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-muted', f.iconColor)}>
+                  <div
+                    className={cn(
+                      'mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-muted',
+                      f.iconColor,
+                    )}
+                  >
                     <f.icon className="h-5 w-5" />
                   </div>
                   <h3 className="text-base font-semibold">{f.title}</h3>
@@ -420,7 +514,7 @@ export default function HomePage() {
       {/* ─── Final CTA ─── */}
       <Section className="container py-24 text-center">
         <div className="mx-auto max-w-2xl">
-          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 h-64 w-64 rounded-full bg-primary/10 blur-[100px]" />
+          <div className="pointer-events-none absolute left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-primary/10 blur-[100px]" />
           <h2 className="relative text-balance text-3xl font-extrabold tracking-tight sm:text-5xl">
             Comece a controlar sua vida{' '}
             <span className="bg-gradient-to-r from-primary to-violet-400 bg-clip-text text-transparent">
@@ -428,11 +522,15 @@ export default function HomePage() {
             </span>
           </h2>
           <p className="relative mt-4 text-muted-foreground sm:text-lg">
-            Centenas de decisões melhores começam com clareza sobre onde você está. O LifeOS
-            é o primeiro passo.
+            Centenas de decisões melhores começam com clareza sobre onde você está. O LifeOS é o
+            primeiro passo.
           </p>
           <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button asChild size="lg" className="h-12 gap-2 px-10 text-base font-semibold shadow-lg shadow-primary/30">
+            <Button
+              asChild
+              size="lg"
+              className="h-12 gap-2 px-10 text-base font-semibold shadow-lg shadow-primary/30"
+            >
               <Link href="/register">
                 Criar minha conta grátis
                 <ArrowRight className="h-4 w-4" />

@@ -50,7 +50,7 @@ const STEPS: Step[] = [
     icon: Flame,
     title: 'Pronto para começar',
     description: 'Vamos para o seu dashboard. Você pode personalizar tudo a qualquer momento.',
-    highlights: ['Dashboard com tudo de uma vez', 'Tarefas e produtividade', 'Notificações e perfil'],
+    highlights: ['Dashboard com tudo de uma vez', 'Jornada e metas', 'Notificações e perfil'],
   },
 ];
 
@@ -87,10 +87,7 @@ export function OnboardingClient({ name }: { name: string }) {
             <span>
               Passo {step + 1} de {STEPS.length}
             </span>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="hover:text-foreground"
-            >
+            <button onClick={() => router.push('/dashboard')} className="hover:text-foreground">
               Pular
             </button>
           </div>
@@ -122,9 +119,7 @@ export function OnboardingClient({ name }: { name: string }) {
                 <h2 className="text-2xl font-semibold tracking-tight">
                   {step === 0 ? `Olá, ${name.split(' ')[0]}` : current.title}
                 </h2>
-                {step === 0 && (
-                  <p className="mt-1 text-sm text-primary">{current.title}</p>
-                )}
+                {step === 0 && <p className="mt-1 text-sm text-primary">{current.title}</p>}
                 <p className="mt-2 text-sm text-muted-foreground">{current.description}</p>
               </div>
 
@@ -142,7 +137,11 @@ export function OnboardingClient({ name }: { name: string }) {
           </AnimatePresence>
 
           <div className="flex items-center justify-between pt-4">
-            <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
+            <Button
+              variant="ghost"
+              onClick={() => setStep((s) => Math.max(0, s - 1))}
+              disabled={step === 0}
+            >
               Voltar
             </Button>
             <Button onClick={next} disabled={submitting}>

@@ -15,7 +15,6 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 - Despesas por categoria (donut)
 - Hábitos do dia com toggle inline
 - Metas em destaque com barra de progresso
-- Tarefas pendentes
 
 ### Jornada (gamificação)
 
@@ -60,12 +59,6 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 - Cálculo de **streak atual** e **maior sequência**
 - Calendário visual dos últimos 30 dias
 - Indicador de consistência (%)
-
-### Produtividade
-
-- Tarefas com prioridade e prazo
-- Agrupamento automático: urgentes, hoje, próximas, concluídas
-- Toggle inline de conclusão
 
 ### Conta
 
@@ -123,7 +116,8 @@ src/
 │   │   ├── financas/
 │   │   ├── metas/
 │   │   ├── habitos/
-│   │   ├── tarefas/
+│   │   ├── jornada/
+│   │   ├── investimentos/
 │   │   ├── perfil/
 │   │   ├── configuracoes/
 │   │   └── onboarding/
@@ -133,7 +127,6 @@ src/
 │   │   ├── categories/
 │   │   ├── goals/
 │   │   ├── habits/
-│   │   ├── tasks/
 │   │   ├── notifications/
 │   │   ├── dashboard/
 │   │   └── me/

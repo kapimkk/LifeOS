@@ -18,9 +18,12 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   journeySchema,
   journeyStepSchema,
+  updateJourneyStepSchema,
   type JourneyInput,
   type JourneyStepInput,
+  type UpdateJourneyStepInput,
 } from '@/lib/validators/journey';
+import type { SerializedJourney, SerializedJourneyStep } from '@/modules/journey/domain/entities';
 
 interface CreateJourneyDialogProps {
   open: boolean;
@@ -208,6 +211,195 @@ export function AddStepDialog({
             </Button>
             <Button type="submit" disabled={submitting}>
               {submitting ? 'Salvando...' : 'Adicionar passo'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface EditJourneyDialogProps {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  journey: SerializedJourney | null;
+  onSubmit: (data: JourneyInput) => Promise<void>;
+  submitting: boolean;
+}
+
+export function EditJourneyDialog({
+  open,
+  onOpenChange,
+  journey,
+  onSubmit,
+  submitting,
+}: EditJourneyDialogProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<JourneyInput>({
+    resolver: zodResolver(journeySchema),
+    defaultValues: { name: '', description: '' },
+  });
+
+  useEffect(() => {
+    if (open && journey) {
+      reset({ name: journey.name, description: journey.description ?? '' });
+    }
+  }, [open, journey, reset]);
+
+  if (!journey) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar jornada</DialogTitle>
+          <DialogDescription>Altere o nome e a descrição da trilha.</DialogDescription>
+        </DialogHeader>
+        <form
+          className="space-y-4"
+          onSubmit={handleSubmit(async (v) => {
+            await onSubmit(v);
+          })}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="ej-name">Nome</Label>
+            <Input id="ej-name" {...register('name')} />
+            {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="ej-desc">Descrição</Label>
+            <Textarea id="ej-desc" rows={3} {...register('description')} />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface EditStepDialogProps {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  step: SerializedJourneyStep | null;
+  onSubmit: (data: UpdateJourneyStepInput) => Promise<void>;
+  submitting: boolean;
+}
+
+export function EditStepDialog({
+  open,
+  onOpenChange,
+  step,
+  onSubmit,
+  submitting,
+}: EditStepDialogProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<UpdateJourneyStepInput>({
+    resolver: zodResolver(updateJourneyStepSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      url: '',
+      instructor: '',
+      difficulty: 1,
+      xpReward: 100,
+    },
+  });
+
+  useEffect(() => {
+    if (open && step) {
+      reset({
+        title: step.title,
+        description: step.description ?? '',
+        url: step.url ?? '',
+        instructor: step.instructor ?? '',
+        difficulty: step.difficulty,
+        xpReward: step.xpReward,
+      });
+    }
+  }, [open, step, reset]);
+
+  if (!step) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Editar missão</DialogTitle>
+          <DialogDescription>
+            XP exibido usa o valor atual de xpReward
+            {step.status === 'COMPLETED' && ' (já contabilizado no total conquistado)'}.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          className="space-y-4"
+          onSubmit={handleSubmit(async (v) => {
+            await onSubmit(v);
+          })}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="es-title">Título</Label>
+            <Input id="es-title" {...register('title')} />
+            {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="es-inst">Instrutor</Label>
+            <Input id="es-inst" {...register('instructor')} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="es-desc">Frase / descrição</Label>
+            <Textarea id="es-desc" rows={2} {...register('description')} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="es-url">Link do curso</Label>
+            <Input id="es-url" type="url" placeholder="https://..." {...register('url')} />
+            {errors.url && <p className="text-xs text-destructive">{errors.url.message}</p>}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="es-diff">Dificuldade (1-5)</Label>
+              <Input
+                id="es-diff"
+                type="number"
+                min={1}
+                max={5}
+                {...register('difficulty', { valueAsNumber: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="es-xp">Recompensa XP</Label>
+              <Input
+                id="es-xp"
+                type="number"
+                min={1}
+                max={100000}
+                {...register('xpReward', { valueAsNumber: true })}
+              />
+              {errors.xpReward && (
+                <p className="text-xs text-destructive">{errors.xpReward.message}</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Salvando...' : 'Salvar'}
             </Button>
           </DialogFooter>
         </form>

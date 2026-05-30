@@ -19,8 +19,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               Organize sua vida com clareza, foco e progresso real.
             </h2>
             <p className="max-w-md text-sm text-muted-foreground">
-              Acompanhe finanças, metas, hábitos e tarefas em um único painel pensado para te
-              fazer evoluir todos os dias.
+              Acompanhe finanças, metas, hábitos e jornada em um único painel pensado para te fazer
+              evoluir todos os dias.
             </p>
           </div>
         </div>

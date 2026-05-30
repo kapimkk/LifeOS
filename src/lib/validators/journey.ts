@@ -41,3 +41,22 @@ export const journeyStepSchema = z.object({
 export type JourneyInput = z.infer<typeof journeySchema>;
 
 export type JourneyStepInput = z.infer<typeof journeyStepSchema>;
+
+/** Edição de passo (sem journeyId/order — ordem é recalculada ao excluir). */
+export const updateJourneyStepSchema = z.object({
+  title: safeText(1, 200, 'Título obrigatório'),
+  description: safeOptionalText(2000),
+  url: z
+    .string()
+    .max(2048)
+    .optional()
+    .nullable()
+    .refine((v) => !v || v.trim() === '' || /^https?:\/\/.+/i.test(v.trim()), {
+      message: 'URL inválida',
+    }),
+  instructor: safeOptionalText(120),
+  difficulty: z.coerce.number().int().min(1).max(5),
+  xpReward: z.coerce.number().int().min(1, 'XP deve ser pelo menos 1').max(100_000),
+});
+
+export type UpdateJourneyStepInput = z.infer<typeof updateJourneyStepSchema>;
