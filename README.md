@@ -17,14 +17,26 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 - Metas em destaque com barra de progresso
 - Tarefas pendentes
 
-### Finanças
+### Jornada (gamificação)
+
+- Trilhas de estudo com passos ordenados (missões estilo RPG)
+- Desbloqueio sequencial: passo N só avança após N−1 concluído
+- Dificuldade (1–5 estrelas), XP por missão, instrutor e link do curso
+- UI em `/jornada` com linha vertical, cards neon e estados bloqueado/em andamento/concluído
+- Módulo DDD em `src/modules/journey` (commands, queries, repository)
+
+### Finanças (rota `/financas`, fora do menu principal)
 
 - CRUD completo de transações (receita/despesa)
 - Categorias personalizáveis com cor
 - Filtros por tipo, categoria e descrição
 - Recorrência (diária, semanal, mensal, anual)
 - Gráficos de evolução e categorias
-- **Investimentos**: caixinhas com tipo, valor acumulado, cor e % do total
+- Cartão de crédito, parcelamento e fatura do mês
+
+### Investimentos (`/investimentos`)
+
+- Caixinhas com tipo, valor acumulado, cor e % do total (menu lateral dedicado)
 
 ### Cofre de Recursos
 
@@ -73,6 +85,13 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 - Totalmente responsivo
 
 ---
+
+## Segurança
+
+- Lista de espera: `User.isApproved` (login bloqueado até aprovação).
+- Anti brute force (429) em login/registro.
+- Sanitização XSS (`isomorphic-dompurify`) nos validadores Zod.
+- Prisma apenas (sem SQL bruto). Detalhes: [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Stack
 

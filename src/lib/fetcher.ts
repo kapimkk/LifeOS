@@ -2,10 +2,7 @@
  * Fetcher do client-side. Sempre envia cookies (httpOnly) e trata
  * erros padronizados do backend.
  */
-export async function apiFetch<T>(
-  input: string,
-  init: RequestInit = {},
-): Promise<T> {
+export async function apiFetch<T>(input: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(input, {
     ...init,
     credentials: 'include',
@@ -21,9 +18,14 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const message = payload?.error ?? `Erro ${res.status}`;
-    const error = new Error(message) as Error & { details?: unknown; status?: number };
+    const error = new Error(message) as Error & {
+      details?: unknown;
+      status?: number;
+      code?: string;
+    };
     error.details = payload?.details;
     error.status = res.status;
+    error.code = payload?.code;
     throw error;
   }
 

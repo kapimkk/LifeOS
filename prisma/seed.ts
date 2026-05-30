@@ -28,11 +28,13 @@ async function main() {
 
   const user = await prisma.user.upsert({
     where: { email: 'demo@lifeos.app' },
-    update: {},
+    update: { isApproved: true, role: 'ADMIN' },
     create: {
       name: 'Usuário Demo',
       email: 'demo@lifeos.app',
       passwordHash,
+      role: 'ADMIN',
+      isApproved: true,
       onboardedAt: new Date(),
       preferences: {
         create: { theme: 'dark' },
@@ -111,8 +113,20 @@ async function main() {
   if (investmentsExist === 0) {
     await prisma.investment.createMany({
       data: [
-        { userId: user.id, name: 'CDB Banco X 110% CDI', amount: 8500, type: 'CDB', color: '#22c55e' },
-        { userId: user.id, name: 'Tesouro IPCA+ 2035', amount: 12000, type: 'Tesouro Direto', color: '#10b981' },
+        {
+          userId: user.id,
+          name: 'CDB Banco X 110% CDI',
+          amount: 8500,
+          type: 'CDB',
+          color: '#22c55e',
+        },
+        {
+          userId: user.id,
+          name: 'Tesouro IPCA+ 2035',
+          amount: 12000,
+          type: 'Tesouro Direto',
+          color: '#10b981',
+        },
         { userId: user.id, name: 'ITSA4', amount: 3200, type: 'Ações', color: '#3b82f6' },
         { userId: user.id, name: 'HGLG11', amount: 4800, type: 'FIIs', color: '#a855f7' },
         { userId: user.id, name: 'Bitcoin', amount: 1500, type: 'Cripto', color: '#f97316' },
@@ -152,7 +166,9 @@ async function main() {
     });
   }
 
-  console.log('Seed concluído. Login demo: demo@lifeos.app / demo1234');
+  console.log(
+    'Seed concluído. Admin aprovado: demo@lifeos.app / demo1234 (isApproved=true, role=ADMIN)',
+  );
 }
 
 main()

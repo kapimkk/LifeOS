@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { safeText, safeOptionalText } from '@/lib/zod-sanitize';
 
 export const paymentMethodSchema = z.enum(['CASH', 'CREDIT_CARD', 'DEBIT', 'PIX']);
 
@@ -8,8 +9,8 @@ export const transactionFieldsSchema = z.object({
     .number({ invalid_type_error: 'Valor inválido' })
     .positive('Valor deve ser positivo')
     .max(1_000_000_000),
-  description: z.string().min(1, 'Descrição obrigatória').max(200),
-  notes: z.string().max(1000).optional().nullable(),
+  description: safeText(1, 200, 'Descrição obrigatória'),
+  notes: safeOptionalText(1000),
   categoryId: z.string().min(1).optional().nullable(),
   date: z.union([z.string(), z.date()]),
   recurrence: z.enum(['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']).default('NONE'),

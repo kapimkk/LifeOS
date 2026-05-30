@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { safeOptionalText } from '@/lib/zod-sanitize';
 
 // Re-exporta tipos do local canônico para quem importa daqui
 export type {
@@ -22,12 +23,12 @@ export const lifeBalanceSchema = z.object({
   pessoal: scoreField,
   espiritualidade: scoreField,
   contribuicao: scoreField,
-  notes: z.string().max(1000).optional().nullable(),
+  notes: safeOptionalText(1000),
 });
 
 // ─── Diário de Humor ──────────────────────────────────────────────────────────
 
 export const moodSchema = z.object({
   mood: z.enum(['awful', 'bad', 'okay', 'good', 'great']),
-  note: z.string().max(500).optional().nullable(),
+  note: safeOptionalText(500),
 });

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ZodError, type ZodType } from 'zod';
-import { UnauthorizedError } from '@/shared/errors';
+import { AwaitingApprovalError, UnauthorizedError } from '@/shared/errors';
 
 export class ApiError extends Error {
   status: number;
@@ -33,6 +33,9 @@ export function handleApiError(error: unknown) {
   }
   if (error instanceof UnauthorizedError) {
     return NextResponse.json({ error: error.message }, { status: 401 });
+  }
+  if (error instanceof AwaitingApprovalError) {
+    return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
   }
   if (error instanceof ApiError) {
     return NextResponse.json(

@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Sparkles } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,8 +13,8 @@ import { apiFetch } from '@/lib/fetcher';
 import { registerSchema, type RegisterInput } from '@/lib/validators/auth';
 
 export function RegisterForm() {
-  const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   const {
     register,
@@ -32,15 +32,31 @@ export function RegisterForm() {
         method: 'POST',
         body: JSON.stringify(values),
       });
-      toast.success('Conta criada com sucesso!');
-      router.push('/onboarding');
-      router.refresh();
+      setRegistered(true);
+      toast.success('Conta criada! Aguarde a liberação para entrar.');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao criar conta';
       toast.error(message);
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (registered) {
+    return (
+      <div className="space-y-4 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15">
+          <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Sua conta foi criada com sucesso, mas está aguardando a liberação do administrador. Você
+          receberá acesso assim que for aprovado.
+        </p>
+        <Button asChild className="w-full">
+          <Link href="/login">Ir para o login</Link>
+        </Button>
+      </div>
+    );
   }
 
   return (

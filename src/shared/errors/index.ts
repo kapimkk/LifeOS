@@ -1,3 +1,5 @@
+export { AwaitingApprovalError } from './awaiting-approval';
+
 export class UnauthorizedError extends Error {
   status = 401;
   constructor(message = 'Não autenticado') {

@@ -1,13 +1,14 @@
 import {
   Bookmark,
   CheckSquare,
+  Compass,
   Flame,
   LayoutDashboard,
   RefreshCw,
   Settings,
   Target,
+  TrendingUp,
   User,
-  Wallet,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -20,7 +21,8 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, group: 'principal' },
-  { label: 'Finanças', href: '/financas', icon: Wallet, group: 'principal' },
+  { label: 'Jornada', href: '/jornada', icon: Compass, group: 'principal' },
+  { label: 'Investimentos', href: '/investimentos', icon: TrendingUp, group: 'principal' },
   { label: 'Metas', href: '/metas', icon: Target, group: 'principal' },
   { label: 'Hábitos', href: '/habitos', icon: Flame, group: 'principal' },
   { label: 'Tarefas', href: '/tarefas', icon: CheckSquare, group: 'principal' },

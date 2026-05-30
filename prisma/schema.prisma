@@ -86,6 +86,12 @@ enum ResourceStatus {
   ARCHIVED
 }
 
+enum JourneyStepStatus {
+  LOCKED
+  IN_PROGRESS
+  COMPLETED
+}
+
 // ----------------------------------------------------------
 // USERS / AUTH
 // ----------------------------------------------------------
@@ -97,6 +103,7 @@ model User {
   passwordHash  String
   avatarUrl     String?
   role          Role     @default(USER)
+  isApproved    Boolean  @default(false)
   emailVerified DateTime?
   onboardedAt   DateTime?
   timezone      String   @default("America/Sao_Paulo")
@@ -119,6 +126,7 @@ model User {
   resources         Resource[]
   lifeBalance       LifeBalance?
   moodLogs          MoodLog[]
+  journeys          Journey[]
 
   @@index([email])
 }
@@ -395,4 +403,38 @@ model MoodLog {
 
   @@unique([userId, date])
   @@index([userId, date])
+}
+
+// ----------------------------------------------------------
+// JORNADA — missões gamificadas (árvore de passos)
+// ----------------------------------------------------------
+
+model Journey {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steps JourneyStep[]
+
+  @@index([userId])
+}
+
+model JourneyStep {
+  id          String             @id @default(cuid())
+  journeyId   String
+  title       String
+  description String?
+  url         String?
+  instructor  String?
+  difficulty  Int                @default(1)
+  xpReward    Int                @default(100)
+  order       Int
+  status      JourneyStepStatus  @default(LOCKED)
+
+  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@index([journeyId, order])
 }

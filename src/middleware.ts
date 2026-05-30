@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { getClientIp } from '@/lib/get-client-ip';
+import { authBruteForceKey, bruteForceResponse, checkAuthBruteForce } from '@/lib/auth-brute-force';
 
 const ACCESS_COOKIE = 'lifeos_access';
 const REFRESH_COOKIE = 'lifeos_refresh';
@@ -38,6 +40,17 @@ async function isValidAccess(token: string | undefined) {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (
+    req.method === 'POST' &&
+    (pathname === '/api/auth/login' || pathname === '/api/auth/register')
+  ) {
+    const scope = pathname.endsWith('/login') ? 'login' : 'register';
+    const blocked = checkAuthBruteForce(authBruteForceKey(scope, getClientIp(req)));
+    if (!blocked.allowed) {
+      return bruteForceResponse(blocked.retryAfterSec ?? 900);
+    }
+  }
 
   if (isPublic(pathname)) {
     // Se já estiver logado e tentar acessar /login, redireciona ao dashboard.

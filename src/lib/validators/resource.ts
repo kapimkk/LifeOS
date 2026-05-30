@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { safeText, safeOptionalText } from '@/lib/zod-sanitize';
 
 export const RESOURCE_CATEGORIES = [
   'Artigo',
@@ -15,7 +16,7 @@ export const RESOURCE_CATEGORIES = [
 export const RESOURCE_STATUSES = ['TO_READ', 'IN_PROGRESS', 'DONE', 'ARCHIVED'] as const;
 
 export const resourceSchema = z.object({
-  title: z.string().min(1, 'Informe um título').max(200),
+  title: safeText(1, 200, 'Informe um título'),
   url: z
     .string()
     .url('URL inválida')
@@ -24,8 +25,8 @@ export const resourceSchema = z.object({
       (v) => /^https?:\/\//i.test(v),
       'Apenas URLs com protocolo http:// ou https:// são permitidas',
     ),
-  description: z.string().max(2000).optional().nullable(),
-  category: z.string().max(60).optional().nullable(),
+  description: safeOptionalText(2000),
+  category: safeOptionalText(60),
   status: z.enum(RESOURCE_STATUSES).default('TO_READ'),
 });
 

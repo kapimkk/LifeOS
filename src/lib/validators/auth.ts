@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import { safeText } from '@/lib/zod-sanitize';
 
 export const registerSchema = z.object({
-  name: z.string().min(2, 'Informe seu nome').max(80),
+  name: safeText(2, 80, 'Informe seu nome'),
   email: z.string().email('E-mail inválido').toLowerCase(),
   password: z
     .string()

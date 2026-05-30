@@ -13,7 +13,7 @@ import {
 import type { SerializedInvestment } from '../domain/entities';
 import type { InvestmentInput } from '@/lib/validators/investment';
 
-const INVALIDATE_PATHS = ['/financas', '/dashboard'] as const;
+const INVALIDATE_PATHS = ['/financas', '/investimentos', '/dashboard'] as const;
 
 function revalidate() {
   for (const path of INVALIDATE_PATHS) revalidatePath(path);

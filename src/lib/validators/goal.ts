@@ -1,9 +1,12 @@
 import { z } from 'zod';
+import { safeText, safeOptionalText } from '@/lib/zod-sanitize';
 
 export const goalSchema = z.object({
-  title: z.string().min(1).max(120),
-  description: z.string().max(2000).optional().nullable(),
-  category: z.enum(['FINANCIAL', 'PERSONAL', 'STUDIES', 'FITNESS', 'CAREER', 'OTHER']).default('PERSONAL'),
+  title: safeText(1, 120),
+  description: safeOptionalText(2000),
+  category: z
+    .enum(['FINANCIAL', 'PERSONAL', 'STUDIES', 'FITNESS', 'CAREER', 'OTHER'])
+    .default('PERSONAL'),
   targetValue: z.number().positive().optional().nullable(),
   currentValue: z.number().nonnegative().default(0),
   progress: z.number().int().min(0).max(100).default(0),

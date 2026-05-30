@@ -105,6 +105,11 @@ export async function refreshSession() {
     return null;
   }
 
+  if (!stored.user.isApproved) {
+    await clearAuthCookies();
+    return null;
+  }
+
   await prisma.refreshToken.update({
     where: { id: stored.id },
     data: { revokedAt: new Date() },
@@ -143,6 +148,7 @@ export async function getCurrentUser() {
       name: true,
       email: true,
       role: true,
+      isApproved: true,
       avatarUrl: true,
       currency: true,
       locale: true,
@@ -151,6 +157,11 @@ export async function getCurrentUser() {
       preferences: true,
     },
   });
+
+  if (user && !user.isApproved) {
+    await clearAuthCookies();
+    return null;
+  }
 
   return user;
 }
