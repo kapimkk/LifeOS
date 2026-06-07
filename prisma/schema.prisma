@@ -91,6 +91,13 @@ enum JourneyStepStatus {
   COMPLETED
 }
 
+enum WishCategory {
+  ASSINATURAS
+  ELETRONICOS
+  JOGOS
+  LAZER
+}
+
 // ----------------------------------------------------------
 // USERS / AUTH
 // ----------------------------------------------------------
@@ -121,6 +128,8 @@ model User {
   notifications     Notification[]
   preferences       UserPreferences?
   investments       Investment[]
+  wishItems         WishItem[]
+  fixedExpenses     FixedExpense[]
   resources         Resource[]
   lifeBalance       LifeBalance?
   moodLogs          MoodLog[]
@@ -316,6 +325,43 @@ model Investment {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ----------------------------------------------------------
+// DESEJOS — lista de consumo
+// ----------------------------------------------------------
+
+model WishItem {
+  id          String       @id @default(cuid())
+  userId      String
+  name        String
+  price       Decimal      @db.Decimal(14, 2)
+  link        String?
+  description String?
+  category    WishCategory @default(ELETRONICOS)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, category])
+}
+
+// ----------------------------------------------------------
+// GASTOS FIXOS — despesas recorrentes mensais
+// ----------------------------------------------------------
+
+model FixedExpense {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  amount    Decimal  @db.Decimal(14, 2)
+  dueDate   Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dueDate])
 }
 
 // ----------------------------------------------------------

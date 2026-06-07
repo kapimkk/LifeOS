@@ -12,7 +12,7 @@ import { serializeTransaction } from './serialize-transaction';
 import type { SerializedTransaction } from '@/types/finance-transaction';
 import type { TransactionInput } from '@/lib/validators/transaction';
 
-const PATHS = ['/financas', '/dashboard'] as const;
+const PATHS = ['/financas/lancamentos', '/dashboard'] as const;
 
 function revalidateFinance() {
   for (const p of PATHS) revalidatePath(p);

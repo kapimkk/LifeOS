@@ -15,10 +15,10 @@ import {
   getYearlySummaryQuery,
 } from '@/modules/finance/application/queries/list-transactions.query';
 import { serializeTransaction } from '@/modules/finance/interfaces/serialize-transaction';
-import { FinancePageShell } from './finance-page-shell';
-import { resolveFinancePeriod } from './finance-period';
+import { FinancePageShell } from '../finance-page-shell';
+import { resolveFinancePeriod } from '../finance-period';
 
-export const metadata: Metadata = { title: 'Finanças' };
+export const metadata: Metadata = { title: 'Lançamentos' };
 export const dynamic = 'force-dynamic';
 
 interface SearchParamsMaybe {
@@ -28,7 +28,7 @@ interface SearchParamsMaybe {
   y?: string;
 }
 
-export default async function FinancePage({
+export default async function FinanceLancamentosPage({
   searchParams,
 }: {
   searchParams?: Promise<SearchParamsMaybe> | SearchParamsMaybe;

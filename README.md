@@ -33,9 +33,18 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 - Gráficos de evolução e categorias
 - Cartão de crédito, parcelamento e fatura do mês
 
-### Investimentos (`/investimentos`)
+### Finanças (`/financas`)
 
-- Caixinhas com tipo, valor acumulado, cor e % do total (menu lateral dedicado)
+- Menu **Finanças** com abas: **Investimentos** e **Gastos Fixos**
+- Investimentos: caixinhas com tipo, valor, cor e % do total (dados preservados na tabela `Investment`)
+- Gastos fixos: despesas mensais com dia de vencimento e card de total
+- Lançamentos legados em `/financas/lancamentos` (transações)
+
+### Desejos (`/desejos`)
+
+- Lista de consumo por abas: Assinaturas, Eletrônicos, Jogos, Lazer
+- CRUD com preço, link e descrição opcionais
+- Módulo DDD em `src/modules/wishes`
 
 ### Cofre de Recursos
 

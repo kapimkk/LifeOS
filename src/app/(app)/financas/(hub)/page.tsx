@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
-export default function InvestimentosRedirectPage() {
+export default function FinanceHubIndexPage() {
   redirect('/financas/investimentos');
 }

@@ -25,7 +25,7 @@ export function DashboardInvestmentsSummary({ investments, total, currency, byTy
           Investimentos
         </CardTitle>
         <Button asChild size="sm" variant="ghost" className="h-8 text-xs">
-          <Link href="/investimentos">Gerenciar</Link>
+          <Link href="/financas/investimentos">Gerenciar</Link>
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -35,7 +35,7 @@ export function DashboardInvestmentsSummary({ investments, total, currency, byTy
               Nenhum investimento cadastrado. Registre suas caixinhas e alocações.
             </p>
             <Button asChild size="sm" variant="outline">
-              <Link href="/investimentos">Adicionar investimento</Link>
+              <Link href="/financas/investimentos">Adicionar investimento</Link>
             </Button>
           </>
         ) : (

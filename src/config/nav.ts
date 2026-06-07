@@ -5,8 +5,9 @@ import {
   LayoutDashboard,
   RefreshCw,
   Settings,
+  ShoppingBag,
   Target,
-  TrendingUp,
+  Wallet,
   User,
   type LucideIcon,
 } from 'lucide-react';
@@ -21,7 +22,8 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, group: 'principal' },
   { label: 'Jornada', href: '/jornada', icon: Compass, group: 'principal' },
-  { label: 'Investimentos', href: '/investimentos', icon: TrendingUp, group: 'principal' },
+  { label: 'Finanças', href: '/financas/investimentos', icon: Wallet, group: 'principal' },
+  { label: 'Desejos', href: '/desejos', icon: ShoppingBag, group: 'principal' },
   { label: 'Metas', href: '/metas', icon: Target, group: 'principal' },
   { label: 'Hábitos', href: '/habitos', icon: Flame, group: 'principal' },
   { label: 'Recursos', href: '/recursos', icon: Bookmark, group: 'principal' },
