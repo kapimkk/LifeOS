@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Check, Flame, Sparkles, Target, Wallet } from 'lucide-react';
+import { ArrowRight, Bookmark, Check, Compass, Sparkles, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { apiFetch } from '@/lib/fetcher';
@@ -33,24 +33,24 @@ const STEPS: Step[] = [
     highlights: [
       'Recorrência diária, semanal, mensal',
       'Categorias personalizáveis',
-      'Saldo, gráficos e previsões',
+      'Investimentos e gastos fixos',
     ],
   },
   {
-    icon: Target,
-    title: 'Metas e hábitos',
-    description: 'Defina objetivos, acompanhe progresso e construa rotinas saudáveis.',
+    icon: Compass,
+    title: 'Jornada e recursos',
+    description: 'Evolua com missões gamificadas e guarde links úteis no cofre de recursos.',
     highlights: [
-      'Metas com prioridade e prazo',
-      'Hábitos com streak e calendário',
-      'Consistência ao longo do tempo',
+      'Trilhas com XP e desbloqueio',
+      'Cofre de estudos, lazer e ferramentas',
+      'Lista de desejos organizada',
     ],
   },
   {
-    icon: Flame,
+    icon: Bookmark,
     title: 'Pronto para começar',
     description: 'Vamos para o seu dashboard. Você pode personalizar tudo a qualquer momento.',
-    highlights: ['Dashboard com tudo de uma vez', 'Jornada e metas', 'Notificações e perfil'],
+    highlights: ['Dashboard com jornada e investimentos', 'Finanças e desejos', 'Notificações'],
   },
 ];
 

@@ -9,11 +9,7 @@ import { cn } from '@/lib/utils';
 
 export function Sidebar() {
   const pathname = usePathname();
-
-  const grouped = {
-    principal: NAV_ITEMS.filter((i) => i.group === 'principal'),
-    pessoal: NAV_ITEMS.filter((i) => i.group === 'pessoal'),
-  };
+  const items = NAV_ITEMS.filter((i) => i.group === 'principal');
 
   return (
     <aside className="hidden h-screen w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
@@ -27,18 +23,8 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-6">
-        <NavGroup label="Principal" items={grouped.principal} pathname={pathname} />
-        <NavGroup label="Conta" items={grouped.pessoal} pathname={pathname} />
+        <NavGroup label="Principal" items={items} pathname={pathname} />
       </nav>
-
-      <div className="border-t border-sidebar-border p-4">
-        <div className="rounded-lg bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-4">
-          <p className="text-xs font-medium text-foreground">Em evolução</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Mais módulos chegando: pomodoro, calendário e relatórios.
-          </p>
-        </div>
-      </div>
     </aside>
   );
 }

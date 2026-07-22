@@ -154,7 +154,6 @@ export async function getCurrentUser() {
       locale: true,
       timezone: true,
       onboardedAt: true,
-      preferences: true,
     },
   });
 

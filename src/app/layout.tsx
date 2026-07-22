@@ -16,8 +16,8 @@ export const metadata: Metadata = {
     template: '%s · LifeOS',
   },
   description:
-    'LifeOS é um painel pessoal completo: finanças, metas, hábitos, produtividade e evolução em um só lugar.',
-  keywords: ['LifeOS', 'finanças pessoais', 'hábitos', 'metas', 'produtividade'],
+    'LifeOS é um painel pessoal completo: finanças, jornada, recursos e produtividade em um só lugar.',
+  keywords: ['LifeOS', 'finanças pessoais', 'jornada', 'produtividade', 'investimentos'],
   authors: [{ name: 'LifeOS' }],
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
 

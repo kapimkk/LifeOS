@@ -12,7 +12,6 @@ const userSelect = {
   locale: true,
   timezone: true,
   onboardedAt: true,
-  preferences: true,
 } as const;
 
 export const userRepository = {
@@ -39,7 +38,6 @@ export const userRepository = {
         name: data.name,
         email: data.email,
         passwordHash: data.passwordHash,
-        preferences: { create: { theme: 'dark' } },
         ...(data.defaultCategories && {
           categories: {
             create: data.defaultCategories.map((c) => ({
@@ -55,40 +53,11 @@ export const userRepository = {
     });
   },
 
-  async updateProfile(
-    id: string,
-    data: Partial<{
-      name: string;
-      avatarUrl: string | null;
-      currency: string;
-      locale: string;
-      timezone: string;
-    }>,
-  ) {
-    return prisma.user.update({ where: { id }, data, select: userSelect });
-  },
-
   async updatePasswordHash(id: string, passwordHash: string) {
     await prisma.user.update({ where: { id }, data: { passwordHash } });
   },
 
   async updateOnboarding(id: string) {
     await prisma.user.update({ where: { id }, data: { onboardedAt: new Date() } });
-  },
-
-  async upsertPreferences(
-    userId: string,
-    data: Partial<{
-      theme: string;
-      weeklyDigest: boolean;
-      emailReminders: boolean;
-      pushReminders: boolean;
-    }>,
-  ) {
-    return prisma.userPreferences.upsert({
-      where: { userId },
-      create: { userId, ...data },
-      update: data,
-    });
   },
 };

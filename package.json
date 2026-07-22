@@ -2,7 +2,7 @@
   "name": "lifeos",
   "version": "0.1.0",
   "private": true,
-  "description": "LifeOS - Painel de controle pessoal: finanças, metas, hábitos, produtividade e evolução.",
+  "description": "LifeOS - Painel de controle pessoal: finanças, jornada, recursos e produtividade.",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",

@@ -1,8 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut, Settings, User as UserIcon } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -51,17 +50,6 @@ export function UserMenu({ user }: UserMenuProps) {
             <span className="text-xs text-muted-foreground">{user.email}</span>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/perfil">
-            <UserIcon className="h-4 w-4" /> Perfil
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/configuracoes">
-            <Settings className="h-4 w-4" /> Configurações
-          </Link>
-        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={logout} className="text-destructive">
           <LogOut className="h-4 w-4" /> Sair

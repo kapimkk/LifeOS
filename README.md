@@ -1,8 +1,8 @@
 # LifeOS
 
-> **Painel de controle da sua vida** — finanças, metas, hábitos, produtividade e evolução em um só lugar.
+> **Painel de controle da sua vida** — finanças, jornada, recursos e produtividade em um só lugar.
 
-LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Prisma e PostgreSQL, focada em organização pessoal completa com uma experiência inspirada em Notion, Linear e Stripe.
+LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Prisma e PostgreSQL, focada em organização pessoal com uma experiência inspirada em Notion, Linear e Stripe.
 
 ---
 
@@ -24,21 +24,13 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 - UI em `/jornada` com linha vertical, cards neon e estados bloqueado/em andamento/concluído
 - Módulo DDD em `src/modules/journey` (commands, queries, repository)
 
-### Finanças (rota `/financas`, fora do menu principal)
-
-- CRUD completo de transações (receita/despesa)
-- Categorias personalizáveis com cor
-- Filtros por tipo, categoria e descrição
-- Recorrência (diária, semanal, mensal, anual)
-- Gráficos de evolução e categorias
-- Cartão de crédito, parcelamento e fatura do mês
-
-### Finanças (`/financas`)
+### Finanças (rota `/financas`)
 
 - Menu **Finanças** com abas: **Investimentos** e **Gastos Fixos**
-- Investimentos: caixinhas com tipo, valor, cor e % do total (dados preservados na tabela `Investment`)
+- Investimentos: caixinhas com tipo, valor, cor e % do total (dados na tabela `Investment`)
 - Gastos fixos: despesas mensais com dia de vencimento e card de total
 - Lançamentos legados em `/financas/lancamentos` (transações)
+- CRUD de transações, categorias, recorrência, cartão e parcelamento
 
 ### Desejos (`/desejos`)
 
@@ -55,29 +47,12 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 - **Exportar XLSX** por categoria (botão em cada aba)
 - Toggle inline de "lido"
 
-### Metas
-
-- Categorias: financeira, pessoal, estudos, fitness, carreira
-- Prioridade (baixa, média, alta, urgente)
-- Progresso em % calculado automaticamente
-- Status (ativa, pausada, concluída, arquivada)
-- Prazo opcional
-
-### Hábitos
-
-- Toggle de conclusão diária
-- Cálculo de **streak atual** e **maior sequência**
-- Calendário visual dos últimos 30 dias
-- Indicador de consistência (%)
-
 ### Conta
 
 - Cadastro e login com **JWT + Refresh Token**
 - Recuperação de senha (token + reset)
 - Sessão persistente em cookies httpOnly
 - Rotação de refresh token e revogação no logout
-- Perfil com **upload de avatar**
-- Configurações: tema (dark/light/system), notificações
 - Onboarding inicial (4 passos)
 
 ### Extras
@@ -124,22 +99,17 @@ src/
 │   ├── (app)/                    # Páginas autenticadas
 │   │   ├── dashboard/
 │   │   ├── financas/
-│   │   ├── metas/
-│   │   ├── habitos/
 │   │   ├── jornada/
-│   │   ├── investimentos/
-│   │   ├── perfil/
-│   │   ├── configuracoes/
+│   │   ├── desejos/
+│   │   ├── recursos/
 │   │   └── onboarding/
 │   ├── api/                      # Route Handlers (REST)
 │   │   ├── auth/                 # login, register, refresh, logout, ...
 │   │   ├── transactions/
 │   │   ├── categories/
-│   │   ├── goals/
-│   │   ├── habits/
 │   │   ├── notifications/
 │   │   ├── dashboard/
-│   │   └── me/
+│   │   └── me/                   # onboarding
 │   ├── layout.tsx
 │   ├── globals.css
 │   └── page.tsx                  # Landing
@@ -148,21 +118,20 @@ src/
 │   ├── layout/                   # Sidebar, Topbar, MobileNav, UserMenu, ...
 │   ├── dashboard/                # Charts e widgets do dashboard
 │   └── theme-provider.tsx
-├── server/
-│   ├── auth/                     # JWT, cookies, password, sessão
-│   └── services/                 # Camada de serviço (Clean Arch)
+├── modules/                      # Domínio DDD lite (journey, finance, wishes, ...)
 ├── lib/
 │   ├── prisma.ts
-│   ├── api.ts                    # Helpers de API + tratamento de erros
-│   ├── fetcher.ts                # Cliente HTTP
+│   ├── api.ts
+│   ├── fetcher.ts
 │   ├── utils.ts
-│   └── validators/               # Schemas Zod
+│   └── validators/
 ├── config/
-│   ├── env.ts                    # Validação de env vars
+│   ├── env.ts
 │   └── nav.ts
-└── middleware.ts                 # Proteção de rotas
+└── middleware.ts
 prisma/
 ├── schema.prisma
+├── migrations/
 └── seed.ts
 ```
 
@@ -172,18 +141,10 @@ prisma/
 
 ### Opção A — Docker (recomendado)
 
-Tudo (app + Postgres) com um único comando.
-
 ```bash
-# 1. Crie o .env (copie do exemplo)
 cp .env.example .env
-
-# 2. Edite os secrets JWT no .env (mínimo 32 caracteres cada)
-
-# 3. Suba os containers
+# Edite os secrets JWT no .env (mínimo 32 caracteres cada)
 docker compose up -d --build
-
-# 4. Rode as migrations e o seed
 docker compose exec app npx prisma migrate deploy
 docker compose exec app npm run prisma:seed
 ```
@@ -196,21 +157,11 @@ Login demo: `demo@lifeos.app` / `demo1234`
 Pré-requisitos: **Node 20+**, **PostgreSQL 14+**.
 
 ```bash
-# 1. Instalar dependências
 npm install
-
-# 2. Copiar e ajustar .env
 cp .env.example .env
-# Ajuste DATABASE_URL e os JWT_SECRETS
-
-# 3. Subir só o Postgres via docker-compose (opcional)
 docker compose up -d db
-
-# 4. Migrations e seed
 npm run prisma:migrate
 npm run prisma:seed
-
-# 5. Dev server
 npm run dev
 ```
 
@@ -250,23 +201,12 @@ Veja [`.env.example`](./.env.example). Principais:
 
 ## Arquitetura
 
-- **Clean Architecture lite**: páginas/route handlers chamam **serviços** em `src/server/services`. Os serviços encapsulam regras de negócio e acesso ao Prisma.
-- **Validação ponta-a-ponta**: schemas Zod em `src/lib/validators` são reutilizados pelo backend (via `parseJson`) e pelos forms client-side (via `react-hook-form` + `zodResolver`).
-- **Tratamento global de erros**: `handleApiError` em `src/lib/api.ts` converte `ZodError`, `ApiError`, `UnauthorizedError` em respostas HTTP consistentes.
-- **Auth segura**:
-  - Senhas com `bcryptjs` (10 rounds)
-  - Access token JWT (15 min) em cookie httpOnly
-  - Refresh token JWT (7 dias) em cookie httpOnly + hash no banco
-  - Rotação de refresh tokens (revoga antigo a cada renovação)
-  - Logout revoga o refresh token corrente
-  - Reset de senha invalida todas as sessões
-- **Server Actions** (Next.js 15) para mutações dos módulos novos
-  (`Investment`, `Resource`): retornam `ActionResult<T>` padronizado
-  (`{ success, data }` ou `{ success: false, error, fieldErrors }`),
-  combinados com `useTransition` no client para loading states.
-  `revalidatePath` mantém os Server Components sincronizados.
-- **Middleware Edge** (`src/middleware.ts`): valida o access token; redireciona não autenticados para `/login` e libera fluxos públicos.
-- **Tipagem forte**: TS strict + `noUncheckedIndexedAccess`.
+- **Clean Architecture / DDD lite**: módulos em `src/modules` com commands, queries e repositories.
+- **Validação ponta-a-ponta**: schemas Zod em `src/lib/validators`.
+- **Tratamento global de erros**: `handleApiError` em `src/lib/api.ts`.
+- **Auth segura**: bcryptjs, JWT httpOnly, rotação de refresh tokens, reset de senha.
+- **Server Actions** para mutações dos módulos (Investment, Resource, Journey, etc.).
+- **Middleware Edge** (`src/middleware.ts`): protege rotas autenticadas.
 
 ---
 

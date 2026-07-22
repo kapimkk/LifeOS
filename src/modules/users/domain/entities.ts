@@ -11,16 +11,3 @@ export interface User {
   timezone: string;
   onboardedAt: Date | null;
 }
-
-export interface UserPreferences {
-  id: string;
-  userId: string;
-  theme: string;
-  weeklyDigest: boolean;
-  emailReminders: boolean;
-  pushReminders: boolean;
-}
-
-export interface UserWithPreferences extends User {
-  preferences: UserPreferences | null;
-}

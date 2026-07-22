@@ -36,9 +36,6 @@ async function main() {
       role: 'ADMIN',
       isApproved: true,
       onboardedAt: new Date(),
-      preferences: {
-        create: { theme: 'dark' },
-      },
     },
   });
 
@@ -47,53 +44,6 @@ async function main() {
       where: { userId_name_type: { userId: user.id, name: c.name, type: c.type } },
       update: {},
       create: { ...c, userId: user.id },
-    });
-  }
-
-  const habitsExist = await prisma.habit.count({ where: { userId: user.id } });
-  if (habitsExist === 0) {
-    await prisma.habit.createMany({
-      data: [
-        { userId: user.id, title: 'Beber 2L de água', icon: 'droplet', color: '#06b6d4' },
-        { userId: user.id, title: 'Ler 30 minutos', icon: 'book-open', color: '#a855f7' },
-        { userId: user.id, title: 'Treinar', icon: 'dumbbell', color: '#22c55e' },
-        { userId: user.id, title: 'Meditar', icon: 'sparkles', color: '#f59e0b' },
-      ],
-    });
-  }
-
-  const goalsExist = await prisma.goal.count({ where: { userId: user.id } });
-  if (goalsExist === 0) {
-    await prisma.goal.createMany({
-      data: [
-        {
-          userId: user.id,
-          title: 'Reserva de emergência',
-          description: 'Acumular 6 meses de despesas',
-          category: 'FINANCIAL',
-          targetValue: 30000,
-          currentValue: 12500,
-          progress: 41,
-          priority: 'HIGH',
-          deadline: new Date(new Date().setMonth(new Date().getMonth() + 6)),
-        },
-        {
-          userId: user.id,
-          title: 'Aprender Next.js 15',
-          description: 'Concluir curso completo',
-          category: 'STUDIES',
-          progress: 60,
-          priority: 'MEDIUM',
-        },
-        {
-          userId: user.id,
-          title: 'Correr 5km',
-          description: 'Treinar 3x na semana',
-          category: 'FITNESS',
-          progress: 25,
-          priority: 'MEDIUM',
-        },
-      ],
     });
   }
 

@@ -16,12 +16,10 @@ export function MobileNav() {
   const pathname = usePathname();
   const prevPathname = useRef(pathname);
 
-  // Ensure we only portal on the client (avoids SSR mismatch)
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Close on navigation
   useEffect(() => {
     if (prevPathname.current !== pathname) {
       prevPathname.current = pathname;
@@ -29,7 +27,6 @@ export function MobileNav() {
     }
   }, [pathname]);
 
-  // Lock body scroll while open
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
     return () => {
@@ -41,13 +38,6 @@ export function MobileNav() {
     <AnimatePresence>
       {open && (
         <>
-          {/*
-           * Backdrop — rendered via portal directly into <body>, completely
-           * outside the topbar's backdrop-filter stacking context.
-           * backdrop-filter on an ancestor makes that ancestor a containing block
-           * for fixed children, which trapped the sidebar inside the header layer.
-           * Portalling to body.root fixes the z-index and opacity issues.
-           */}
           <motion.div
             className="fixed inset-0 bg-black/70 lg:hidden"
             style={{ zIndex: 9998 }}
@@ -59,10 +49,6 @@ export function MobileNav() {
             aria-hidden="true"
           />
 
-          {/*
-           * Sidebar panel — solid, fully opaque, rendered outside the header so
-           * no parent stacking context can clip or bleed through it.
-           */}
           <motion.aside
             className="fixed inset-y-0 left-0 flex w-72 flex-col border-r border-sidebar-border lg:hidden"
             style={{ zIndex: 9999, backgroundColor: 'hsl(var(--sidebar-bg))' }}
@@ -71,7 +57,6 @@ export function MobileNav() {
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', stiffness: 340, damping: 34 }}
           >
-            {/* Header */}
             <div className="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
@@ -90,7 +75,6 @@ export function MobileNav() {
               </Button>
             </div>
 
-            {/* Nav items — scrolls independently inside the panel */}
             <nav className="flex-1 overflow-y-auto px-3 py-4">
               <NavGroup
                 label="Principal"
@@ -98,23 +82,7 @@ export function MobileNav() {
                 pathname={pathname}
                 onNavigate={() => setOpen(false)}
               />
-              <NavGroup
-                label="Conta"
-                items={NAV_ITEMS.filter((i) => i.group === 'pessoal')}
-                pathname={pathname}
-                onNavigate={() => setOpen(false)}
-              />
             </nav>
-
-            {/* Footer promo */}
-            <div className="shrink-0 border-t border-sidebar-border p-4">
-              <div className="rounded-lg bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-3">
-                <p className="text-xs font-medium text-sidebar-foreground">Em evolução</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Pomodoro, calendário e relatórios chegando em breve.
-                </p>
-              </div>
-            </div>
           </motion.aside>
         </>
       )}
@@ -127,7 +95,6 @@ export function MobileNav() {
         <Menu className="h-5 w-5" />
       </Button>
 
-      {/* Portal to body — bypasses backdrop-filter stacking context on the topbar */}
       {mounted && createPortal(drawer, document.body)}
     </>
   );

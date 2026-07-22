@@ -7,13 +7,11 @@ import {
   ArrowRight,
   BarChart3,
   BookOpen,
-  CheckCircle2,
   Compass,
-  Flame,
   Lock,
   ShieldCheck,
+  ShoppingBag,
   Sparkles,
-  Target,
   TrendingUp,
   Wallet,
   Zap,
@@ -99,66 +97,49 @@ function FinancePreview() {
   );
 }
 
-function GoalsPreview() {
+function JourneyPreview() {
   return (
     <div className="space-y-2.5">
       {[
-        { title: 'Reserva de emergência', cat: 'Financeira', pct: 65, color: '#22c55e' },
-        { title: 'Aprender um novo idioma', cat: 'Estudos', pct: 40, color: '#6366f1' },
-        { title: 'Correr 5km sem parar', cat: 'Fitness', pct: 80, color: '#f59e0b' },
-        { title: 'Promoção no trabalho', cat: 'Carreira', pct: 25, color: '#0ea5e9' },
-      ].map((g) => (
-        <div key={g.title} className="rounded-lg border border-border/50 bg-muted/30 p-2.5">
-          <div className="mb-1.5 flex items-center justify-between gap-2">
-            <p className="truncate text-xs font-medium">{g.title}</p>
+        { title: 'Fundamentos de TypeScript', xp: 100, status: 'Concluído', color: '#22c55e' },
+        { title: 'Next.js App Router', xp: 150, status: 'Em andamento', color: '#6366f1' },
+        { title: 'Prisma e PostgreSQL', xp: 120, status: 'Bloqueado', color: '#64748b' },
+        { title: 'Deploy em produção', xp: 200, status: 'Bloqueado', color: '#64748b' },
+      ].map((s) => (
+        <div key={s.title} className="rounded-lg border border-border/50 bg-muted/30 p-2.5">
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <p className="truncate text-xs font-medium">{s.title}</p>
             <Badge variant="outline" className="shrink-0 text-[9px]">
-              {g.cat}
+              {s.xp} XP
             </Badge>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${g.pct}%`, backgroundColor: g.color }}
-              />
-            </div>
-            <span className="text-[10px] font-semibold text-muted-foreground">{g.pct}%</span>
-          </div>
+          <p className="text-[10px]" style={{ color: s.color }}>
+            {s.status}
+          </p>
         </div>
       ))}
     </div>
   );
 }
 
-function HabitsPreview() {
+function ResourcesPreview() {
   return (
     <div className="space-y-2">
       {[
-        { title: 'Beber 2L de água', streak: 12, done: true, color: '#06b6d4' },
-        { title: 'Ler 30 minutos', streak: 7, done: true, color: '#a855f7' },
-        { title: 'Meditar', streak: 3, done: false, color: '#f59e0b' },
-        { title: 'Treinar', streak: 21, done: true, color: '#22c55e' },
-      ].map((h) => (
+        { title: 'Documentação Next.js', cat: 'Estudos', status: 'Lendo' },
+        { title: 'Playlist foco profundo', cat: 'Lazer', status: 'Para ler' },
+        { title: 'Prisma Studio tips', cat: 'Ferramentas', status: 'Concluído' },
+        { title: 'Guia de investimentos', cat: 'Estudos', status: 'Para ler' },
+      ].map((r) => (
         <div
-          key={h.title}
+          key={r.title}
           className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2"
         >
-          <div
-            className={cn(
-              'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-all',
-            )}
-            style={
-              h.done
-                ? { backgroundColor: h.color, borderColor: h.color }
-                : { borderColor: 'hsl(var(--border))' }
-            }
-          >
-            {h.done && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
-          </div>
-          <span className="flex-1 text-xs font-medium">{h.title}</span>
-          <span className="flex items-center gap-0.5 text-[10px] text-amber-400">
-            <Flame className="h-3 w-3" /> {h.streak}d
-          </span>
+          <BookOpen className="h-3.5 w-3.5 shrink-0 text-rose-400" />
+          <span className="flex-1 truncate text-xs font-medium">{r.title}</span>
+          <Badge variant="outline" className="shrink-0 text-[9px]">
+            {r.cat}
+          </Badge>
         </div>
       ))}
     </div>
@@ -178,22 +159,6 @@ const features = [
     iconColor: 'text-emerald-400',
   },
   {
-    icon: Target,
-    title: 'Metas com propósito',
-    description:
-      'Defina objetivos pessoais, financeiros, fitness e carreira. Veja seu progresso em tempo real.',
-    color: 'from-indigo-500/20 to-indigo-500/5',
-    iconColor: 'text-indigo-400',
-  },
-  {
-    icon: Flame,
-    title: 'Hábitos que ficam',
-    description:
-      'Construa rotinas com checks diários, foguinho de sequência e calendário de consistência.',
-    color: 'from-amber-500/20 to-amber-500/5',
-    iconColor: 'text-amber-400',
-  },
-  {
     icon: Compass,
     title: 'Jornada gamificada',
     description:
@@ -202,11 +167,12 @@ const features = [
     iconColor: 'text-sky-400',
   },
   {
-    icon: BarChart3,
-    title: 'Visão panorâmica',
-    description: 'Dashboard unificado com resumo financeiro, hábitos do dia, metas e jornada.',
-    color: 'from-violet-500/20 to-violet-500/5',
-    iconColor: 'text-violet-400',
+    icon: ShoppingBag,
+    title: 'Lista de desejos',
+    description:
+      'Organize assinaturas, eletrônicos, jogos e lazer com preço e link em um só lugar.',
+    color: 'from-amber-500/20 to-amber-500/5',
+    iconColor: 'text-amber-400',
   },
   {
     icon: BookOpen,
@@ -215,6 +181,20 @@ const features = [
       'Salve artigos, cursos e vídeos para ver depois. Filtre por categoria e marque como lido.',
     color: 'from-rose-500/20 to-rose-500/5',
     iconColor: 'text-rose-400',
+  },
+  {
+    icon: BarChart3,
+    title: 'Visão panorâmica',
+    description: 'Dashboard unificado com resumo da jornada, investimentos e progresso.',
+    color: 'from-violet-500/20 to-violet-500/5',
+    iconColor: 'text-violet-400',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Investimentos e gastos fixos',
+    description: 'Acompanhe patrimônio por tipo e despesas mensais com dia de vencimento.',
+    color: 'from-indigo-500/20 to-indigo-500/5',
+    iconColor: 'text-indigo-400',
   },
 ];
 
@@ -244,8 +224,8 @@ const steps = [
   },
   {
     num: '02',
-    title: 'Configure seu perfil',
-    desc: 'Adicione suas finanças, crie metas e defina seus hábitos.',
+    title: 'Organize sua vida',
+    desc: 'Adicione finanças, monte sua jornada e salve recursos úteis.',
   },
   {
     num: '03',
@@ -313,7 +293,7 @@ export default function HomePage() {
             {...fadeUp(0.16)}
             className="mx-auto mt-6 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg lg:text-xl"
           >
-            Finanças, metas, hábitos e produtividade — reunidos em um único lugar com clareza,
+            Finanças, jornada, recursos e produtividade — reunidos em um único lugar com clareza,
             organização e foco. Pare de gerenciar sua vida em planilhas.
           </motion.p>
 
@@ -384,8 +364,18 @@ export default function HomePage() {
               color: 'text-emerald-400',
               preview: <FinancePreview />,
             },
-            { title: 'Metas', icon: Target, color: 'text-indigo-400', preview: <GoalsPreview /> },
-            { title: 'Hábitos', icon: Flame, color: 'text-amber-400', preview: <HabitsPreview /> },
+            {
+              title: 'Jornada',
+              icon: Compass,
+              color: 'text-sky-400',
+              preview: <JourneyPreview />,
+            },
+            {
+              title: 'Recursos',
+              icon: BookOpen,
+              color: 'text-rose-400',
+              preview: <ResourcesPreview />,
+            },
           ].map((m, i) => (
             <motion.div
               key={m.title}

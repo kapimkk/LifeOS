@@ -1,7 +1,7 @@
 {
   "name": "LifeOS — Painel da Sua Vida",
   "short_name": "LifeOS",
-  "description": "Gerencie finanças, hábitos, metas e produtividade em um só lugar.",
+  "description": "Gerencie finanças, jornada, recursos e produtividade em um só lugar.",
   "start_url": "/dashboard",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -37,9 +37,9 @@
       "description": "Registrar transação"
     },
     {
-      "name": "Hábitos",
-      "url": "/habitos",
-      "description": "Marcar hábito do dia"
+      "name": "Jornada",
+      "url": "/jornada",
+      "description": "Acompanhar missões"
     }
   ]
 }
