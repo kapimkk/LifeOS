@@ -21,6 +21,10 @@ const PUBLIC_PATHS = [
 function isPublic(pathname: string) {
   if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
   if (pathname === '/' || pathname === '/favicon.ico') return true;
+  // Manifest e service worker precisam ser acessíveis sem sessão: é o que o
+  // navegador busca (via <link rel="manifest">) para decidir se oferece
+  // "instalar aplicativo" — inclusive para quem ainda não tem conta.
+  if (pathname === '/manifest.json' || pathname === '/sw.js') return true;
   if (pathname.startsWith('/_next') || pathname.startsWith('/assets')) return true;
   if (pathname.startsWith('/uploads')) return true;
   return false;

@@ -247,51 +247,177 @@
     --secondary-foreground: 38 60% 82%;
   }
 
-  /* Tom do fundo (hue sutil em background/card/muted/border, mesma luminosidade) */
-  [data-bg-tint='cool'] {
-    --background: 210 40% 98%;
-    --card: 210 30% 99%;
-    --popover: 210 30% 99%;
-    --muted: 210 30% 95%;
-    --border: 210 25% 89%;
-    --input: 210 25% 89%;
-    --sidebar-bg: 210 30% 99%;
-    --sidebar-accent: 210 30% 95%;
-    --sidebar-border: 210 25% 89%;
+  /* Cor de fundo (--background + --sidebar-bg) ------------------------- */
+  /* Fórmula fixa por tema (mesma usada para matiz personalizado via color
+     picker): claro = "H 30% 98%", escuro = "H 20% 5%". */
+  [data-background='slate'] {
+    --background: 215 30% 98%;
+    --sidebar-bg: 215 30% 98%;
   }
-  .dark[data-bg-tint='cool'] {
-    --background: 222 25% 5%;
-    --card: 222 20% 8%;
-    --popover: 222 20% 8%;
-    --muted: 222 15% 13%;
-    --border: 222 15% 17%;
-    --input: 222 15% 17%;
-    --sidebar-bg: 222 25% 6%;
-    --sidebar-accent: 222 15% 13%;
-    --sidebar-border: 222 15% 15%;
+  .dark[data-background='slate'] {
+    --background: 215 20% 5%;
+    --sidebar-bg: 215 20% 5%;
   }
 
-  [data-bg-tint='warm'] {
-    --background: 30 20% 98%;
-    --card: 30 25% 99%;
-    --popover: 30 25% 99%;
-    --muted: 30 20% 95%;
-    --border: 30 15% 89%;
-    --input: 30 15% 89%;
-    --sidebar-bg: 30 25% 99%;
-    --sidebar-accent: 30 20% 95%;
-    --sidebar-border: 30 15% 89%;
+  [data-background='blue'] {
+    --background: 217 30% 98%;
+    --sidebar-bg: 217 30% 98%;
   }
-  .dark[data-bg-tint='warm'] {
-    --background: 30 15% 5%;
-    --card: 30 12% 8%;
-    --popover: 30 12% 8%;
-    --muted: 30 10% 13%;
-    --border: 30 10% 16%;
-    --input: 30 10% 16%;
-    --sidebar-bg: 30 15% 6%;
-    --sidebar-accent: 30 10% 13%;
-    --sidebar-border: 30 10% 15%;
+  .dark[data-background='blue'] {
+    --background: 217 20% 5%;
+    --sidebar-bg: 217 20% 5%;
+  }
+
+  [data-background='emerald'] {
+    --background: 152 30% 98%;
+    --sidebar-bg: 152 30% 98%;
+  }
+  .dark[data-background='emerald'] {
+    --background: 152 20% 5%;
+    --sidebar-bg: 152 20% 5%;
+  }
+
+  [data-background='violet'] {
+    --background: 262 30% 98%;
+    --sidebar-bg: 262 30% 98%;
+  }
+  .dark[data-background='violet'] {
+    --background: 262 20% 5%;
+    --sidebar-bg: 262 20% 5%;
+  }
+
+  [data-background='rose'] {
+    --background: 350 30% 98%;
+    --sidebar-bg: 350 30% 98%;
+  }
+  .dark[data-background='rose'] {
+    --background: 350 20% 5%;
+    --sidebar-bg: 350 20% 5%;
+  }
+
+  [data-background='amber'] {
+    --background: 38 30% 98%;
+    --sidebar-bg: 38 30% 98%;
+  }
+  .dark[data-background='amber'] {
+    --background: 38 20% 5%;
+    --sidebar-bg: 38 20% 5%;
+  }
+
+  /* Cor dos cards (--card, --popover, --muted, --border, --input e os
+     equivalentes de sidebar) — mesma fórmula fixa usada no matiz custom. */
+  [data-card='slate'] {
+    --card: 215 30% 99%;
+    --popover: 215 30% 99%;
+    --muted: 215 35% 95%;
+    --border: 215 25% 89%;
+    --input: 215 25% 89%;
+    --sidebar-accent: 215 35% 95%;
+    --sidebar-border: 215 25% 89%;
+  }
+  .dark[data-card='slate'] {
+    --card: 215 20% 8%;
+    --popover: 215 20% 8%;
+    --muted: 215 20% 13%;
+    --border: 215 18% 17%;
+    --input: 215 18% 17%;
+    --sidebar-accent: 215 20% 13%;
+    --sidebar-border: 215 18% 15%;
+  }
+
+  [data-card='blue'] {
+    --card: 217 30% 99%;
+    --popover: 217 30% 99%;
+    --muted: 217 35% 95%;
+    --border: 217 25% 89%;
+    --input: 217 25% 89%;
+    --sidebar-accent: 217 35% 95%;
+    --sidebar-border: 217 25% 89%;
+  }
+  .dark[data-card='blue'] {
+    --card: 217 20% 8%;
+    --popover: 217 20% 8%;
+    --muted: 217 20% 13%;
+    --border: 217 18% 17%;
+    --input: 217 18% 17%;
+    --sidebar-accent: 217 20% 13%;
+    --sidebar-border: 217 18% 15%;
+  }
+
+  [data-card='emerald'] {
+    --card: 152 30% 99%;
+    --popover: 152 30% 99%;
+    --muted: 152 35% 95%;
+    --border: 152 25% 89%;
+    --input: 152 25% 89%;
+    --sidebar-accent: 152 35% 95%;
+    --sidebar-border: 152 25% 89%;
+  }
+  .dark[data-card='emerald'] {
+    --card: 152 20% 8%;
+    --popover: 152 20% 8%;
+    --muted: 152 20% 13%;
+    --border: 152 18% 17%;
+    --input: 152 18% 17%;
+    --sidebar-accent: 152 20% 13%;
+    --sidebar-border: 152 18% 15%;
+  }
+
+  [data-card='violet'] {
+    --card: 262 30% 99%;
+    --popover: 262 30% 99%;
+    --muted: 262 35% 95%;
+    --border: 262 25% 89%;
+    --input: 262 25% 89%;
+    --sidebar-accent: 262 35% 95%;
+    --sidebar-border: 262 25% 89%;
+  }
+  .dark[data-card='violet'] {
+    --card: 262 20% 8%;
+    --popover: 262 20% 8%;
+    --muted: 262 20% 13%;
+    --border: 262 18% 17%;
+    --input: 262 18% 17%;
+    --sidebar-accent: 262 20% 13%;
+    --sidebar-border: 262 18% 15%;
+  }
+
+  [data-card='rose'] {
+    --card: 350 30% 99%;
+    --popover: 350 30% 99%;
+    --muted: 350 35% 95%;
+    --border: 350 25% 89%;
+    --input: 350 25% 89%;
+    --sidebar-accent: 350 35% 95%;
+    --sidebar-border: 350 25% 89%;
+  }
+  .dark[data-card='rose'] {
+    --card: 350 20% 8%;
+    --popover: 350 20% 8%;
+    --muted: 350 20% 13%;
+    --border: 350 18% 17%;
+    --input: 350 18% 17%;
+    --sidebar-accent: 350 20% 13%;
+    --sidebar-border: 350 18% 15%;
+  }
+
+  [data-card='amber'] {
+    --card: 38 30% 99%;
+    --popover: 38 30% 99%;
+    --muted: 38 35% 95%;
+    --border: 38 25% 89%;
+    --input: 38 25% 89%;
+    --sidebar-accent: 38 35% 95%;
+    --sidebar-border: 38 25% 89%;
+  }
+  .dark[data-card='amber'] {
+    --card: 38 20% 8%;
+    --popover: 38 20% 8%;
+    --muted: 38 20% 13%;
+    --border: 38 18% 17%;
+    --input: 38 18% 17%;
+    --sidebar-accent: 38 20% 13%;
+    --sidebar-border: 38 18% 15%;
   }
 
   /* Estilo dos cantos --------------------------------------------------- */

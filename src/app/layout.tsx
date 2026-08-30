@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Manrope, Lora } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AppearanceProvider, APPEARANCE_INLINE_SCRIPT } from '@/components/appearance-provider';
+import { ServiceWorkerRegister } from '@/components/service-worker-register';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 
@@ -79,6 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <AppearanceProvider>
+            <ServiceWorkerRegister />
             {children}
             <Toaster />
           </AppearanceProvider>

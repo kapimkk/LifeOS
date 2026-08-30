@@ -23,22 +23,24 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import {
   ACCENT_COLORS,
-  BG_TINT_OPTIONS,
   DENSITY_OPTIONS,
   FONT_OPTIONS,
   RADIUS_OPTIONS,
   SECONDARY_COLORS,
+  SURFACE_COLORS,
   contrastForegroundHsl,
   hexToHslString,
+  hexToHue,
   useAppearance,
   type AccentColor,
   type AppearanceSettings,
-  type BgTintOption,
   type DensityOption,
   type FontOption,
   type RadiusOption,
   type SecondaryColor,
+  type SurfaceColor,
 } from '@/components/appearance-provider';
+import { PwaInstallCard } from '@/components/pwa-install-card';
 
 // ---------------------------------------------------------------------------
 // Metadados de exibição das opções
@@ -91,10 +93,14 @@ const FONT_META: Record<FontOption, { label: string; sample: string; className: 
   lora: { label: 'Lora', sample: 'Aa', className: 'font-[family-name:var(--font-lora)]' },
 };
 
-const BG_TINT_META: Record<BgTintOption, { label: string; description: string; swatch: string }> = {
-  neutral: { label: 'Neutro', description: 'Cinza puro (padrão)', swatch: 'bg-[hsl(240,5%,80%)]' },
-  cool: { label: 'Frio', description: 'Leve toque azulado', swatch: 'bg-[hsl(210,35%,80%)]' },
-  warm: { label: 'Quente', description: 'Leve toque amadeirado', swatch: 'bg-[hsl(30,30%,80%)]' },
+const SURFACE_META: Record<Exclude<SurfaceColor, 'custom'>, { label: string; swatch: string }> = {
+  neutral: { label: 'Neutro', swatch: 'bg-[hsl(240,5%,75%)]' },
+  slate: { label: 'Ardósia', swatch: 'bg-[hsl(215,20%,70%)]' },
+  blue: { label: 'Azul', swatch: 'bg-[hsl(217,45%,72%)]' },
+  emerald: { label: 'Esmeralda', swatch: 'bg-[hsl(152,35%,65%)]' },
+  violet: { label: 'Violeta', swatch: 'bg-[hsl(262,35%,72%)]' },
+  rose: { label: 'Rosa', swatch: 'bg-[hsl(350,40%,75%)]' },
+  amber: { label: 'Âmbar', swatch: 'bg-[hsl(38,50%,70%)]' },
 };
 
 interface AccountInfo {
@@ -310,38 +316,84 @@ function AppearanceSettings() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Tom do fundo</CardTitle>
-            <CardDescription>Ajusta o matiz de fundo, cards e bordas.</CardDescription>
+            <CardTitle>Cor de fundo</CardTitle>
+            <CardDescription>Matiz do fundo da página e da barra lateral.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {BG_TINT_OPTIONS.map((tint) => {
-                const meta = BG_TINT_META[tint];
-                const active = settings.bgTint === tint;
+            <div className="grid grid-cols-4 gap-3 sm:grid-cols-8">
+              {SURFACE_COLORS.filter((s) => s !== 'custom').map((bg) => {
+                const meta = SURFACE_META[bg as Exclude<SurfaceColor, 'custom'>];
+                const active = settings.background === bg;
                 return (
                   <button
-                    key={tint}
+                    key={bg}
                     type="button"
-                    onClick={() => setSetting('bgTint', tint)}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg border p-3 text-left transition-colors',
-                      active
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border/60 hover:border-border',
-                    )}
+                    onClick={() => setSetting('background', bg)}
+                    className="flex flex-col items-center gap-1.5"
                     aria-pressed={active}
+                    aria-label={meta.label}
                   >
-                    <span className={cn('h-8 w-8 shrink-0 rounded-full', meta.swatch)} />
-                    <span className="flex-1">
-                      <span className="block text-sm font-medium">{meta.label}</span>
-                      <span className="block text-xs text-muted-foreground">
-                        {meta.description}
-                      </span>
+                    <span
+                      className={cn(
+                        'flex h-9 w-9 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-background transition-all',
+                        meta.swatch,
+                        active ? 'ring-foreground' : 'ring-transparent hover:ring-border',
+                      )}
+                    >
+                      {active && <Check className="h-4 w-4 text-foreground drop-shadow" />}
                     </span>
-                    {active && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                    <span className="text-[10px] text-muted-foreground">{meta.label}</span>
                   </button>
                 );
               })}
+              <CustomColorSwatch
+                hex={settings.customBackgroundHex}
+                active={settings.background === 'custom'}
+                label="Escolher cor de fundo personalizada"
+                onPick={(hex) => updateSettings({ background: 'custom', customBackgroundHex: hex })}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Cor dos cards</CardTitle>
+            <CardDescription>Matiz de cards, campos, bordas e menus flutuantes.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-3 sm:grid-cols-8">
+              {SURFACE_COLORS.filter((s) => s !== 'custom').map((card) => {
+                const meta = SURFACE_META[card as Exclude<SurfaceColor, 'custom'>];
+                const active = settings.card === card;
+                return (
+                  <button
+                    key={card}
+                    type="button"
+                    onClick={() => setSetting('card', card)}
+                    className="flex flex-col items-center gap-1.5"
+                    aria-pressed={active}
+                    aria-label={meta.label}
+                  >
+                    <span
+                      className={cn(
+                        'flex h-9 w-9 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-background transition-all',
+                        meta.swatch,
+                        active ? 'ring-foreground' : 'ring-transparent hover:ring-border',
+                      )}
+                    >
+                      {active && <Check className="h-4 w-4 text-foreground drop-shadow" />}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">{meta.label}</span>
+                  </button>
+                );
+              })}
+              <CustomColorSwatch
+                hex={settings.customCardHex}
+                active={settings.card === 'custom'}
+                label="Escolher cor dos cards personalizada"
+                onPick={(hex) => updateSettings({ card: 'custom', customCardHex: hex })}
+              />
             </div>
           </CardContent>
         </Card>
@@ -554,7 +606,13 @@ function ThemeCard() {
  */
 function PreviewPanel({ settings }: { settings: AppearanceSettings }) {
   const { resolvedTheme } = useTheme();
+  // `resolvedTheme` só existe no cliente (next-themes retorna undefined no
+  // SSR); só usamos o valor real depois de montado para não gerar mismatch
+  // de hidratação (mesmo padrão do `ThemeCard` acima).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
+  const isDark = mounted && resolvedTheme === 'dark';
   const customVars: Record<string, string> = {};
   if (settings.accent === 'custom') {
     const hsl = hexToHslString(settings.customAccentHex);
@@ -567,15 +625,26 @@ function PreviewPanel({ settings }: { settings: AppearanceSettings }) {
     customVars['--secondary'] = hsl;
     customVars['--secondary-foreground'] = contrastForegroundHsl(settings.customSecondaryHex);
   }
+  if (settings.background === 'custom') {
+    const h = hexToHue(settings.customBackgroundHex);
+    customVars['--background'] = isDark ? `${h} 20% 5%` : `${h} 30% 98%`;
+  }
+  if (settings.card === 'custom') {
+    const h = hexToHue(settings.customCardHex);
+    customVars['--card'] = isDark ? `${h} 20% 8%` : `${h} 30% 99%`;
+    customVars['--muted'] = isDark ? `${h} 20% 13%` : `${h} 35% 95%`;
+    customVars['--border'] = isDark ? `${h} 18% 17%` : `${h} 25% 89%`;
+  }
 
   return (
     <Card
-      className={cn('overflow-hidden', resolvedTheme === 'dark' && 'dark')}
+      className={cn('overflow-hidden', isDark && 'dark')}
       data-accent={settings.accent}
       data-secondary={settings.secondary}
+      data-background={settings.background}
+      data-card={settings.card}
       data-radius={settings.radius}
       data-font={settings.font}
-      data-bg-tint={settings.bgTint}
       style={customVars as React.CSSProperties}
     >
       <div className="flex items-center gap-2 border-b border-border/50 px-4 py-3">
@@ -644,22 +713,26 @@ function AccountSettings({ account }: { account: AccountInfo }) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Dados da conta</CardTitle>
-        <CardDescription>Informações associadas ao seu login no LifeOS.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {rows.map((row, i) => (
-          <div key={row.label}>
-            <div className="flex items-center justify-between py-1.5 text-sm">
-              <span className="text-muted-foreground">{row.label}</span>
-              <span className="font-medium">{row.value}</span>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Dados da conta</CardTitle>
+          <CardDescription>Informações associadas ao seu login no LifeOS.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {rows.map((row, i) => (
+            <div key={row.label}>
+              <div className="flex items-center justify-between py-1.5 text-sm">
+                <span className="text-muted-foreground">{row.label}</span>
+                <span className="font-medium">{row.value}</span>
+              </div>
+              {i < rows.length - 1 && <Separator />}
             </div>
-            {i < rows.length - 1 && <Separator />}
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+          ))}
+        </CardContent>
+      </Card>
+
+      <PwaInstallCard />
+    </div>
   );
 }
