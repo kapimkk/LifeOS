@@ -22,16 +22,28 @@ const DEFAULT_CATEGORIES: Array<{
 ];
 
 async function main() {
+  // Credenciais do usuário semeado são configuráveis por env var para evitar
+  // publicar um admin com senha previsível em qualquer ambiente que não seja
+  // dev local. Em produção (NODE_ENV=production) o seed só roda se as duas
+  // variáveis forem definidas explicitamente.
+  const seedEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@lifeos.local';
+  const seedPassword = process.env.SEED_ADMIN_PASSWORD;
+
+  if (process.env.NODE_ENV === 'production' && !seedPassword) {
+    console.log('SEED_ADMIN_PASSWORD não definida em produção — pulando criação de usuário admin.');
+    return;
+  }
+
   console.log('Seeding database...');
 
-  const passwordHash = await bcrypt.hash('demo1234', 10);
+  const passwordHash = await bcrypt.hash(seedPassword ?? 'troque-esta-senha', 10);
 
   const user = await prisma.user.upsert({
-    where: { email: 'demo@lifeos.app' },
-    update: { isApproved: true, role: 'ADMIN' },
+    where: { email: seedEmail },
+    update: {},
     create: {
-      name: 'Usuário Demo',
-      email: 'demo@lifeos.app',
+      name: 'Administrador',
+      email: seedEmail,
       passwordHash,
       role: 'ADMIN',
       isApproved: true,
@@ -105,7 +117,8 @@ async function main() {
   }
 
   console.log(
-    'Seed concluído. Admin aprovado: demo@lifeos.app / demo1234 (isApproved=true, role=ADMIN)',
+    `Seed concluído. Admin aprovado: ${seedEmail} (isApproved=true, role=ADMIN). ` +
+      (seedPassword ? 'Senha definida via SEED_ADMIN_PASSWORD.' : 'Senha padrão de dev local.'),
   );
 }
 

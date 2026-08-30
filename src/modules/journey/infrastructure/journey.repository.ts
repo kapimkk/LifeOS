@@ -211,7 +211,7 @@ export const journeyRepository = {
   },
 
   async updateStep(userId: string, stepId: string, data: UpdateJourneyStepInput) {
-    const step = await this.assertStepOwnership(userId, stepId);
+    await this.assertStepOwnership(userId, stepId);
     return prisma.journeyStep.update({
       where: { id: stepId },
       data: {

@@ -316,13 +316,6 @@ export default function HomePage() {
             </Button>
           </motion.div>
 
-          <motion.p {...fadeUp(0.3)} className="mt-6 text-xs text-muted-foreground">
-            Conta demo disponível:{' '}
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono">demo@lifeos.app</code>
-            {' / '}
-            <code className="rounded bg-muted px-1.5 py-0.5 font-mono">demo1234</code>
-          </motion.p>
-
           {/* Floating stats */}
           <motion.div
             {...fadeUp(0.36)}
