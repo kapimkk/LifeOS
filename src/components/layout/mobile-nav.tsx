@@ -75,10 +75,16 @@ export function MobileNav() {
               </Button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto px-3 py-4">
+            <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
               <NavGroup
                 label="Principal"
                 items={NAV_ITEMS.filter((i) => i.group === 'principal')}
+                pathname={pathname}
+                onNavigate={() => setOpen(false)}
+              />
+              <NavGroup
+                label="Sistema"
+                items={NAV_ITEMS.filter((i) => i.group === 'sistema')}
                 pathname={pathname}
                 onNavigate={() => setOpen(false)}
               />

@@ -77,6 +77,10 @@ const config: Config = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        // `rounded-xl` é usado por Card/Dialog/Toaster — mantém em sincronia
+        // com `--radius` para que o controle de "Estilo dos cantos" em
+        // Configurações afete containers, não só botões/campos.
+        xl: 'var(--radius)',
       },
       keyframes: {
         'accordion-down': {

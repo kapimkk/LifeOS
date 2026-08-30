@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 export function Sidebar() {
   const pathname = usePathname();
   const items = NAV_ITEMS.filter((i) => i.group === 'principal');
+  const systemItems = NAV_ITEMS.filter((i) => i.group === 'sistema');
 
   return (
     <aside className="hidden h-screen w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
@@ -22,8 +23,9 @@ export function Sidebar() {
         </span>
       </div>
 
-      <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-6">
+      <nav className="flex flex-1 flex-col justify-between overflow-y-auto px-3 py-6">
         <NavGroup label="Principal" items={items} pathname={pathname} />
+        <NavGroup label="Sistema" items={systemItems} pathname={pathname} />
       </nav>
     </aside>
   );
@@ -38,6 +40,7 @@ function NavGroup({
   items: typeof NAV_ITEMS;
   pathname: string;
 }) {
+  if (items.length === 0) return null;
   return (
     <div>
       <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">

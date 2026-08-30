@@ -1,12 +1,26 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Manrope, Lora } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
+import { AppearanceProvider, APPEARANCE_INLINE_SCRIPT } from '@/components/appearance-provider';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 
+// Fontes disponíveis no módulo Configurações > Aparência. Todas ficam
+// carregadas e disponíveis como variável CSS; a escolha ativa é aplicada
+// via `--font-sans` (ver globals.css `[data-font]`).
 const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-sans',
+  variable: '--font-inter',
+  display: 'swap',
+});
+const manrope = Manrope({
+  subsets: ['latin'],
+  variable: '--font-manrope',
+  display: 'swap',
+});
+const lora = Lora({
+  subsets: ['latin'],
+  variable: '--font-lora',
   display: 'swap',
 });
 
@@ -50,16 +64,24 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html
+      lang="pt-BR"
+      suppressHydrationWarning
+      className={`${inter.variable} ${manrope.variable} ${lora.variable}`}
+    >
       <head>
         {/* PWA splash / icon links for iOS Safari */}
         <link rel="apple-touch-icon" href="/icon-192.svg" />
         <link rel="icon" type="image/svg+xml" href="/icon-192.svg" />
+        {/* Aplica tema e aparência salvos antes da hidratação, evitando flash */}
+        <script dangerouslySetInnerHTML={{ __html: APPEARANCE_INLINE_SCRIPT }} />
       </head>
-      <body className={`${inter.variable} font-sans`}>
+      <body className="font-sans">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          {children}
-          <Toaster />
+          <AppearanceProvider>
+            {children}
+            <Toaster />
+          </AppearanceProvider>
         </ThemeProvider>
       </body>
     </html>

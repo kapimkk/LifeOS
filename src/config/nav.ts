@@ -2,6 +2,7 @@ import {
   Bookmark,
   Compass,
   LayoutDashboard,
+  Settings,
   ShoppingBag,
   Wallet,
   type LucideIcon,
@@ -11,7 +12,7 @@ export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  group?: 'principal';
+  group?: 'principal' | 'sistema';
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -20,4 +21,5 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Finanças', href: '/financas/investimentos', icon: Wallet, group: 'principal' },
   { label: 'Desejos', href: '/desejos', icon: ShoppingBag, group: 'principal' },
   { label: 'Recursos', href: '/recursos', icon: Bookmark, group: 'principal' },
+  { label: 'Configurações', href: '/configuracoes', icon: Settings, group: 'sistema' },
 ];
