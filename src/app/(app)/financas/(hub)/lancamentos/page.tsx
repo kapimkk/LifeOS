@@ -15,10 +15,10 @@ import {
   getYearlySummaryQuery,
 } from '@/modules/finance/application/queries/list-transactions.query';
 import { serializeTransaction } from '@/modules/finance/interfaces/serialize-transaction';
-import { FinancePageShell } from '../finance-page-shell';
-import { resolveFinancePeriod } from '../finance-period';
+import { FinancePageShell } from '@/app/(app)/financas/finance-page-shell';
+import { resolveFinancePeriod } from '@/app/(app)/financas/finance-period';
 
-export const metadata: Metadata = { title: 'Lançamentos' };
+export const metadata: Metadata = { title: 'Finanças — Lançamentos' };
 export const dynamic = 'force-dynamic';
 
 interface SearchParamsMaybe {

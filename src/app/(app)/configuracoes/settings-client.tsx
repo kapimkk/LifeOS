@@ -1,13 +1,15 @@
 'use client';
 
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import {
   Check,
   Laptop,
   Moon,
   Pipette,
   RotateCcw,
+  Save,
   Sun,
   Type as TypeIcon,
   Wallet,
@@ -26,8 +28,11 @@ import {
   FONT_OPTIONS,
   RADIUS_OPTIONS,
   SECONDARY_COLORS,
+  contrastForegroundHsl,
+  hexToHslString,
   useAppearance,
   type AccentColor,
+  type AppearanceSettings,
   type BgTintOption,
   type DensityOption,
   type FontOption,
@@ -173,7 +178,42 @@ function CustomColorSwatch({
 // Aparência
 // ---------------------------------------------------------------------------
 function AppearanceSettings() {
-  const { settings, setSetting, updateSettings, reset } = useAppearance();
+  const { settings: applied, updateSettings: applyChanges, reset: resetApplied } = useAppearance();
+  const [settings, setDraftState] = useState<AppearanceSettings>(applied);
+
+  // Mantém o rascunho sincronizado com o que está de fato aplicado (na
+  // hidratação inicial e sempre que "Salvar"/"Restaurar padrões" mudam o
+  // valor aplicado por fora deste componente).
+  useEffect(() => {
+    setDraftState(applied);
+  }, [applied]);
+
+  const isDirty = useMemo(
+    () => JSON.stringify(settings) !== JSON.stringify(applied),
+    [settings, applied],
+  );
+
+  const setSetting = useCallback(
+    <K extends keyof AppearanceSettings>(key: K, value: AppearanceSettings[K]) => {
+      setDraftState((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
+  const updateSettings = useCallback((partial: Partial<AppearanceSettings>) => {
+    setDraftState((prev) => ({ ...prev, ...partial }));
+  }, []);
+
+  function handleSave() {
+    applyChanges(settings);
+    toast.success('Aparência salva e aplicada em todo o LifeOS.');
+  }
+  function handleDiscard() {
+    setDraftState(applied);
+  }
+  function handleReset() {
+    resetApplied();
+    toast.success('Aparência restaurada para o padrão.');
+  }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr,320px]">
@@ -415,16 +455,45 @@ function AppearanceSettings() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
-          <Button variant="outline" size="sm" onClick={reset} className="gap-1.5">
-            <RotateCcw className="h-3.5 w-3.5" />
-            Restaurar padrões
-          </Button>
+        <div className="flex flex-col items-start justify-between gap-3 rounded-lg border border-border/60 bg-card/60 p-3 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {isDirty ? (
+              <>
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
+                Você tem alterações não salvas.
+              </>
+            ) : (
+              <>
+                <Check className="h-3.5 w-3.5 shrink-0 text-success" />
+                Tudo salvo e aplicado.
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              className="gap-1.5 text-muted-foreground"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Restaurar padrões
+            </Button>
+            {isDirty && (
+              <Button variant="outline" size="sm" onClick={handleDiscard}>
+                Descartar
+              </Button>
+            )}
+            <Button size="sm" onClick={handleSave} disabled={!isDirty} className="gap-1.5">
+              <Save className="h-3.5 w-3.5" />
+              Salvar alterações
+            </Button>
+          </div>
         </div>
       </div>
 
       <div className="lg:sticky lg:top-6 lg:self-start">
-        <PreviewPanel />
+        <PreviewPanel settings={settings} />
       </div>
     </div>
   );
@@ -476,9 +545,39 @@ function ThemeCard() {
   );
 }
 
-function PreviewPanel() {
+/**
+ * Renderiza a prévia com as cores/estilo do RASCUNHO (ainda não salvo),
+ * isolada do resto da página: os atributos data-* aqui replicam, só neste
+ * card, as mesmas regras CSS que o AppearanceProvider aplica em <html> (ver
+ * globals.css `[data-accent]`/`[data-secondary]`/etc.), sem tocar no tema
+ * já aplicado ao site enquanto o usuário não clicar em "Salvar alterações".
+ */
+function PreviewPanel({ settings }: { settings: AppearanceSettings }) {
+  const { resolvedTheme } = useTheme();
+
+  const customVars: Record<string, string> = {};
+  if (settings.accent === 'custom') {
+    const hsl = hexToHslString(settings.customAccentHex);
+    customVars['--primary'] = hsl;
+    customVars['--ring'] = hsl;
+    customVars['--primary-foreground'] = contrastForegroundHsl(settings.customAccentHex);
+  }
+  if (settings.secondary === 'custom') {
+    const hsl = hexToHslString(settings.customSecondaryHex);
+    customVars['--secondary'] = hsl;
+    customVars['--secondary-foreground'] = contrastForegroundHsl(settings.customSecondaryHex);
+  }
+
   return (
-    <Card className="overflow-hidden">
+    <Card
+      className={cn('overflow-hidden', resolvedTheme === 'dark' && 'dark')}
+      data-accent={settings.accent}
+      data-secondary={settings.secondary}
+      data-radius={settings.radius}
+      data-font={settings.font}
+      data-bg-tint={settings.bgTint}
+      style={customVars as React.CSSProperties}
+    >
       <div className="flex items-center gap-2 border-b border-border/50 px-4 py-3">
         <div className="flex gap-1.5">
           <div className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
