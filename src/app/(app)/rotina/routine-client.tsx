@@ -1,19 +1,22 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Clock, ListChecks, Plus, Sparkles } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Clock, ListChecks, Plus, Settings2, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { cn } from '@/lib/utils';
 import { WEEK_DAYS, WEEK_DAY_LABELS, WEEK_DAY_SHORT, type WeekDay } from '@/lib/validators/routine';
 import type { SerializedRoutineItem } from '@/modules/routine/domain/entities';
 import { RoutineDialog } from './routine-dialog';
-
-const ROW_HEIGHT = 48; // px por hora
-const START_HOUR = 0;
-const END_HOUR = 24;
-const TOTAL_HOURS = END_HOUR - START_HOUR;
-const GRID_HEIGHT = TOTAL_HOURS * ROW_HEIGHT;
+import { RoutineSettingsDialog } from './routine-settings-dialog';
+import {
+  DEFAULT_ROUTINE_VIEW,
+  ROW_HEIGHT_BY_DENSITY,
+  readRoutineViewSettings,
+  saveRoutineViewSettings,
+  type RoutineViewSettings,
+} from './routine-view-settings';
 
 // JS Date#getDay(): 0=domingo..6=sábado. Mapeia para nossos dias (seg-dom).
 const JS_DAY_TO_WEEK_DAY: WeekDay[] = [
@@ -86,12 +89,41 @@ function durationLabel(minutes: number) {
   return `${h}h${String(m).padStart(2, '0')}`;
 }
 
+function hourBoundaryLabel(h: number) {
+  return h >= 24 ? '24:00' : `${String(h).padStart(2, '0')}:00`;
+}
+
 export function RoutineClient({ initialItems }: { initialItems: SerializedRoutineItem[] }) {
   const [items, setItems] = useState(initialItems);
   const [openDialog, setOpenDialog] = useState(false);
   const [editing, setEditing] = useState<SerializedRoutineItem | null>(null);
   const [dialogDay, setDialogDay] = useState<WeekDay>('MONDAY');
   const [dialogStart, setDialogStart] = useState<number | undefined>(undefined);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [view, setView] = useState<RoutineViewSettings>(DEFAULT_ROUTINE_VIEW);
+
+  // Carrega a preferência salva neste dispositivo depois de montar (evita
+  // mismatch de hidratação — o servidor não tem acesso ao localStorage).
+  useEffect(() => {
+    setView(readRoutineViewSettings());
+  }, []);
+
+  function handleViewChange(next: RoutineViewSettings) {
+    setView(next);
+    saveRoutineViewSettings(next);
+  }
+
+  const rowHeight = ROW_HEIGHT_BY_DENSITY[view.density];
+  const { startHour, endHour } = view;
+  const totalHours = endHour - startHour;
+  const gridHeight = totalHours * rowHeight;
+  const visibleStartMinute = startHour * 60;
+  const visibleEndMinute = endHour * 60;
+
+  const displayDays = useMemo(
+    () => (view.weekStart === 'SUNDAY' ? [WEEK_DAYS[6], ...WEEK_DAYS.slice(0, 6)] : WEEK_DAYS),
+    [view.weekStart],
+  );
 
   const todayWeekDay = useMemo(() => JS_DAY_TO_WEEK_DAY[new Date().getDay()], []);
   const nowMinutes = useMemo(() => {
@@ -159,8 +191,11 @@ export function RoutineClient({ initialItems }: { initialItems: SerializedRoutin
     if (e.target !== e.currentTarget) return; // clique em um bloco, não no fundo
     const rect = e.currentTarget.getBoundingClientRect();
     const offsetY = e.clientY - rect.top;
-    const rawMinute = Math.round((offsetY / ROW_HEIGHT) * 60) + START_HOUR * 60;
-    const snapped = Math.max(0, Math.min(1380, Math.round(rawMinute / 30) * 30));
+    const rawMinute = Math.round((offsetY / rowHeight) * 60) + visibleStartMinute;
+    const snapped = Math.max(
+      visibleStartMinute,
+      Math.min(visibleEndMinute - 30, Math.round(rawMinute / 30) * 30),
+    );
     openAddDialog(day, snapped);
   }
 
@@ -187,6 +222,18 @@ export function RoutineClient({ initialItems }: { initialItems: SerializedRoutin
         />
       </div>
 
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => setSettingsOpen(true)}
+        >
+          <Settings2 className="h-3.5 w-3.5" />
+          Configurar grade
+        </Button>
+      </div>
+
       <Card className="overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -197,7 +244,7 @@ export function RoutineClient({ initialItems }: { initialItems: SerializedRoutin
                 style={{ gridTemplateColumns: '56px repeat(7, 1fr)' }}
               >
                 <div className="border-r border-border/40" />
-                {WEEK_DAYS.map((day) => (
+                {displayDays.map((day) => (
                   <div
                     key={day}
                     className={cn(
@@ -229,19 +276,26 @@ export function RoutineClient({ initialItems }: { initialItems: SerializedRoutin
 
               {/* Corpo: linhas de hora + colunas de dia */}
               <div className="grid" style={{ gridTemplateColumns: '56px repeat(7, 1fr)' }}>
-                <div className="relative border-r border-border/40" style={{ height: GRID_HEIGHT }}>
-                  {Array.from({ length: TOTAL_HOURS }, (_, i) => START_HOUR + i).map((h) => (
+                <div className="relative border-r border-border/40" style={{ height: gridHeight }}>
+                  {Array.from({ length: totalHours + 1 }, (_, i) => startHour + i).map((h) => (
                     <div
                       key={h}
-                      className="absolute inset-x-0 -translate-y-1/2 pr-2 text-right text-[10px] text-muted-foreground"
-                      style={{ top: (h - START_HOUR) * ROW_HEIGHT }}
+                      className={cn(
+                        'absolute inset-x-0 pr-2 text-right text-[10px] text-muted-foreground',
+                        h === startHour
+                          ? ''
+                          : h === endHour
+                            ? '-translate-y-full'
+                            : '-translate-y-1/2',
+                      )}
+                      style={{ top: (h - startHour) * rowHeight }}
                     >
-                      {String(h).padStart(2, '0')}:00
+                      {hourBoundaryLabel(h)}
                     </div>
                   ))}
                 </div>
 
-                {WEEK_DAYS.map((day) => {
+                {displayDays.map((day) => {
                   const dayItems = layoutDayItems(itemsByDay.get(day) ?? []);
                   return (
                     <div
@@ -252,30 +306,41 @@ export function RoutineClient({ initialItems }: { initialItems: SerializedRoutin
                         'relative cursor-pointer border-r border-border/40 last:border-r-0',
                         day === todayWeekDay && 'bg-primary/[0.03]',
                       )}
-                      style={{ height: GRID_HEIGHT }}
+                      style={{ height: gridHeight }}
                     >
-                      {Array.from({ length: TOTAL_HOURS }, (_, i) => i).map((i) => (
+                      {/* Linhas de hora, incluindo a linha de fechamento no
+                          final da faixa (evita o bloco "flutuar" sem borda
+                          quando termina exatamente no limite exibido). */}
+                      {Array.from({ length: totalHours + 1 }, (_, i) => i).map((i) => (
                         <div
                           key={i}
-                          className="pointer-events-none absolute inset-x-0 border-t border-border/30"
-                          style={{ top: i * ROW_HEIGHT }}
+                          className={cn(
+                            'pointer-events-none absolute inset-x-0 border-t',
+                            i === totalHours ? 'border-border/60' : 'border-border/30',
+                          )}
+                          style={{ top: i * rowHeight }}
                         />
                       ))}
 
-                      {day === todayWeekDay && nowMinutes >= START_HOUR * 60 && (
-                        <div
-                          className="pointer-events-none absolute inset-x-0 z-10 flex items-center gap-1"
-                          style={{ top: ((nowMinutes - START_HOUR * 60) / 60) * ROW_HEIGHT }}
-                        >
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
-                          <span className="h-px flex-1 bg-destructive/70" />
-                        </div>
-                      )}
+                      {day === todayWeekDay &&
+                        nowMinutes >= visibleStartMinute &&
+                        nowMinutes <= visibleEndMinute && (
+                          <div
+                            className="pointer-events-none absolute inset-x-0 z-10 flex items-center gap-1"
+                            style={{ top: ((nowMinutes - visibleStartMinute) / 60) * rowHeight }}
+                          >
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
+                            <span className="h-px flex-1 bg-destructive/70" />
+                          </div>
+                        )}
 
                       {dayItems.map((item) => {
-                        const top = ((item.startMinute - START_HOUR * 60) / 60) * ROW_HEIGHT;
+                        const clampedStart = Math.max(item.startMinute, visibleStartMinute);
+                        const clampedEnd = Math.min(item.endMinute, visibleEndMinute);
+                        if (clampedEnd <= clampedStart) return null;
+                        const top = ((clampedStart - visibleStartMinute) / 60) * rowHeight;
                         const height = Math.max(
-                          ((item.endMinute - item.startMinute) / 60) * ROW_HEIGHT - 2,
+                          ((clampedEnd - clampedStart) / 60) * rowHeight - 2,
                           16,
                         );
                         const widthPct = 100 / item.lanes;
@@ -334,6 +399,13 @@ export function RoutineClient({ initialItems }: { initialItems: SerializedRoutin
         defaultStartMinute={dialogStart}
         onSaved={handleSaved}
         onDeleted={handleDeleted}
+      />
+
+      <RoutineSettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        settings={view}
+        onChange={handleViewChange}
       />
     </div>
   );
