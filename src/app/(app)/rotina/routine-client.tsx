@@ -1,0 +1,340 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import { Clock, ListChecks, Plus, Sparkles } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { StatCard } from '@/components/dashboard/stat-card';
+import { cn } from '@/lib/utils';
+import { WEEK_DAYS, WEEK_DAY_LABELS, WEEK_DAY_SHORT, type WeekDay } from '@/lib/validators/routine';
+import type { SerializedRoutineItem } from '@/modules/routine/domain/entities';
+import { RoutineDialog } from './routine-dialog';
+
+const ROW_HEIGHT = 48; // px por hora
+const START_HOUR = 0;
+const END_HOUR = 24;
+const TOTAL_HOURS = END_HOUR - START_HOUR;
+const GRID_HEIGHT = TOTAL_HOURS * ROW_HEIGHT;
+
+// JS Date#getDay(): 0=domingo..6=sábado. Mapeia para nossos dias (seg-dom).
+const JS_DAY_TO_WEEK_DAY: WeekDay[] = [
+  'SUNDAY',
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+];
+
+interface LaidOutItem extends SerializedRoutineItem {
+  lane: number;
+  lanes: number;
+}
+
+/** Layout de blocos que se sobrepõem no tempo (mesmo dia): cada item recebe
+ * uma "faixa" (lane); itens no mesmo cluster dividem a largura da coluna. */
+function layoutDayItems(items: SerializedRoutineItem[]): LaidOutItem[] {
+  const sorted = [...items].sort(
+    (a, b) => a.startMinute - b.startMinute || a.endMinute - b.endMinute,
+  );
+  const result: LaidOutItem[] = [];
+  let cluster: LaidOutItem[] = [];
+  let clusterEnd = -1;
+
+  function flushCluster() {
+    if (cluster.length === 0) return;
+    const laneEnds: number[] = [];
+    for (const item of cluster) {
+      let lane = laneEnds.findIndex((end) => end <= item.startMinute);
+      if (lane === -1) {
+        lane = laneEnds.length;
+        laneEnds.push(item.endMinute);
+      } else {
+        laneEnds[lane] = item.endMinute;
+      }
+      item.lane = lane;
+    }
+    const lanes = laneEnds.length;
+    for (const item of cluster) item.lanes = lanes;
+    result.push(...cluster);
+    cluster = [];
+  }
+
+  for (const item of sorted) {
+    if (cluster.length > 0 && item.startMinute >= clusterEnd) {
+      flushCluster();
+      clusterEnd = -1;
+    }
+    cluster.push({ ...item, lane: 0, lanes: 1 });
+    clusterEnd = Math.max(clusterEnd, item.endMinute);
+  }
+  flushCluster();
+  return result;
+}
+
+function formatHour(min: number) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, '0')}`;
+}
+
+function durationLabel(minutes: number) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h${String(m).padStart(2, '0')}`;
+}
+
+export function RoutineClient({ initialItems }: { initialItems: SerializedRoutineItem[] }) {
+  const [items, setItems] = useState(initialItems);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editing, setEditing] = useState<SerializedRoutineItem | null>(null);
+  const [dialogDay, setDialogDay] = useState<WeekDay>('MONDAY');
+  const [dialogStart, setDialogStart] = useState<number | undefined>(undefined);
+
+  const todayWeekDay = useMemo(() => JS_DAY_TO_WEEK_DAY[new Date().getDay()], []);
+  const nowMinutes = useMemo(() => {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  }, []);
+
+  const itemsByDay = useMemo(() => {
+    const map = new Map<WeekDay, SerializedRoutineItem[]>();
+    for (const day of WEEK_DAYS) map.set(day, []);
+    for (const item of items) map.get(item.day)?.push(item);
+    return map;
+  }, [items]);
+
+  const stats = useMemo(() => {
+    const totalMinutes = items.reduce((acc, i) => acc + (i.endMinute - i.startMinute), 0);
+    const categories = new Set(items.map((i) => i.category));
+    let busiestDay: WeekDay | null = null;
+    let busiestMinutes = 0;
+    for (const day of WEEK_DAYS) {
+      const dayMinutes = (itemsByDay.get(day) ?? []).reduce(
+        (acc, i) => acc + (i.endMinute - i.startMinute),
+        0,
+      );
+      if (dayMinutes > busiestMinutes) {
+        busiestMinutes = dayMinutes;
+        busiestDay = day;
+      }
+    }
+    return {
+      totalHours: Math.round((totalMinutes / 60) * 10) / 10,
+      itemCount: items.length,
+      categoryCount: categories.size,
+      busiestDay,
+    };
+  }, [items, itemsByDay]);
+
+  function openAddDialog(day: WeekDay, startMinute?: number) {
+    setEditing(null);
+    setDialogDay(day);
+    setDialogStart(startMinute);
+    setOpenDialog(true);
+  }
+
+  function openEditDialog(item: SerializedRoutineItem) {
+    setEditing(item);
+    setDialogDay(item.day);
+    setDialogStart(undefined);
+    setOpenDialog(true);
+  }
+
+  function handleSaved(item: SerializedRoutineItem) {
+    setItems((prev) => {
+      const idx = prev.findIndex((i) => i.id === item.id);
+      if (idx >= 0) return prev.map((i) => (i.id === item.id ? item : i));
+      return [...prev, item];
+    });
+  }
+
+  function handleDeleted(id: string) {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+  }
+
+  function handleColumnClick(day: WeekDay, e: React.MouseEvent<HTMLDivElement>) {
+    if (e.target !== e.currentTarget) return; // clique em um bloco, não no fundo
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    const rawMinute = Math.round((offsetY / ROW_HEIGHT) * 60) + START_HOUR * 60;
+    const snapped = Math.max(0, Math.min(1380, Math.round(rawMinute / 30) * 30));
+    openAddDialog(day, snapped);
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard
+          label="Horas planejadas / semana"
+          value={`${stats.totalHours}h`}
+          icon={<Clock />}
+          accent="primary"
+        />
+        <StatCard
+          label="Itens na rotina"
+          value={String(stats.itemCount)}
+          icon={<ListChecks />}
+          accent="info"
+        />
+        <StatCard
+          label="Dia mais cheio"
+          value={stats.busiestDay ? WEEK_DAY_LABELS[stats.busiestDay] : '—'}
+          icon={<Sparkles />}
+          accent="warning"
+        />
+      </div>
+
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <div className="min-w-[860px]">
+              {/* Cabeçalho: dias da semana */}
+              <div
+                className="sticky top-0 z-10 grid border-b border-border/60 bg-card"
+                style={{ gridTemplateColumns: '56px repeat(7, 1fr)' }}
+              >
+                <div className="border-r border-border/40" />
+                {WEEK_DAYS.map((day) => (
+                  <div
+                    key={day}
+                    className={cn(
+                      'flex items-center justify-between gap-1 border-r border-border/40 px-2 py-2.5 last:border-r-0',
+                      day === todayWeekDay && 'bg-primary/5',
+                    )}
+                  >
+                    <div>
+                      <p
+                        className={cn(
+                          'text-xs font-semibold',
+                          day === todayWeekDay && 'text-primary',
+                        )}
+                      >
+                        {WEEK_DAY_SHORT[day]}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openAddDialog(day)}
+                      aria-label={`Adicionar em ${WEEK_DAY_LABELS[day]}`}
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Corpo: linhas de hora + colunas de dia */}
+              <div className="grid" style={{ gridTemplateColumns: '56px repeat(7, 1fr)' }}>
+                <div className="relative border-r border-border/40" style={{ height: GRID_HEIGHT }}>
+                  {Array.from({ length: TOTAL_HOURS }, (_, i) => START_HOUR + i).map((h) => (
+                    <div
+                      key={h}
+                      className="absolute inset-x-0 -translate-y-1/2 pr-2 text-right text-[10px] text-muted-foreground"
+                      style={{ top: (h - START_HOUR) * ROW_HEIGHT }}
+                    >
+                      {String(h).padStart(2, '0')}:00
+                    </div>
+                  ))}
+                </div>
+
+                {WEEK_DAYS.map((day) => {
+                  const dayItems = layoutDayItems(itemsByDay.get(day) ?? []);
+                  return (
+                    <div
+                      key={day}
+                      role="presentation"
+                      onClick={(e) => handleColumnClick(day, e)}
+                      className={cn(
+                        'relative cursor-pointer border-r border-border/40 last:border-r-0',
+                        day === todayWeekDay && 'bg-primary/[0.03]',
+                      )}
+                      style={{ height: GRID_HEIGHT }}
+                    >
+                      {Array.from({ length: TOTAL_HOURS }, (_, i) => i).map((i) => (
+                        <div
+                          key={i}
+                          className="pointer-events-none absolute inset-x-0 border-t border-border/30"
+                          style={{ top: i * ROW_HEIGHT }}
+                        />
+                      ))}
+
+                      {day === todayWeekDay && nowMinutes >= START_HOUR * 60 && (
+                        <div
+                          className="pointer-events-none absolute inset-x-0 z-10 flex items-center gap-1"
+                          style={{ top: ((nowMinutes - START_HOUR * 60) / 60) * ROW_HEIGHT }}
+                        >
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
+                          <span className="h-px flex-1 bg-destructive/70" />
+                        </div>
+                      )}
+
+                      {dayItems.map((item) => {
+                        const top = ((item.startMinute - START_HOUR * 60) / 60) * ROW_HEIGHT;
+                        const height = Math.max(
+                          ((item.endMinute - item.startMinute) / 60) * ROW_HEIGHT - 2,
+                          16,
+                        );
+                        const widthPct = 100 / item.lanes;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditDialog(item);
+                            }}
+                            className="absolute overflow-hidden rounded-md border px-1.5 py-1 text-left shadow-sm transition-all hover:z-20 hover:shadow-md"
+                            style={{
+                              top,
+                              height,
+                              left: `${item.lane * widthPct}%`,
+                              width: `calc(${widthPct}% - 2px)`,
+                              backgroundColor: `${item.color}26`,
+                              borderColor: `${item.color}66`,
+                            }}
+                          >
+                            <p
+                              className="truncate text-[11px] font-semibold leading-tight"
+                              style={{ color: item.color }}
+                            >
+                              {item.title}
+                            </p>
+                            {height > 30 && (
+                              <p className="truncate text-[10px] text-muted-foreground">
+                                {formatHour(item.startMinute)} ·{' '}
+                                {durationLabel(item.endMinute - item.startMinute)}
+                              </p>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <p className="text-xs text-muted-foreground">
+        Clique em um espaço vazio da grade para adicionar um item, ou no botão “+” do cabeçalho do
+        dia. Clique em um item existente para editar ou excluir.
+      </p>
+
+      <RoutineDialog
+        open={openDialog}
+        onOpenChange={setOpenDialog}
+        editing={editing}
+        defaultDay={dialogDay}
+        defaultStartMinute={dialogStart}
+        onSaved={handleSaved}
+        onDeleted={handleDeleted}
+      />
+    </div>
+  );
+}

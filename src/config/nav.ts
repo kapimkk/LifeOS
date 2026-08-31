@@ -1,5 +1,6 @@
 import {
   Bookmark,
+  CalendarClock,
   Compass,
   LayoutDashboard,
   Settings,
@@ -17,6 +18,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, group: 'principal' },
+  { label: 'Rotina', href: '/rotina', icon: CalendarClock, group: 'principal' },
   { label: 'Jornada', href: '/jornada', icon: Compass, group: 'principal' },
   { label: 'Finanças', href: '/financas/investimentos', icon: Wallet, group: 'principal' },
   { label: 'Desejos', href: '/desejos', icon: ShoppingBag, group: 'principal' },
