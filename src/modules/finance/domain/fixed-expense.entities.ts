@@ -4,6 +4,7 @@ export interface FixedExpense {
   name: string;
   amount: number;
   dueDate: number;
+  paid: boolean;
   createdAt: Date;
 }
 
@@ -12,5 +13,6 @@ export interface SerializedFixedExpense {
   name: string;
   amount: number;
   dueDate: number;
+  paid: boolean;
   createdAt: string;
 }

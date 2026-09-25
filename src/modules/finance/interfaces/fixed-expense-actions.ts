@@ -7,6 +7,10 @@ import { fixedExpenseSchema } from '@/lib/validators/fixed-expense';
 import { createFixedExpenseCommand } from '../application/commands/create-fixed-expense.command';
 import { updateFixedExpenseCommand } from '../application/commands/update-fixed-expense.command';
 import { deleteFixedExpenseCommand } from '../application/commands/delete-fixed-expense.command';
+import {
+  clearFixedExpensesPaidCommand,
+  setFixedExpensePaidCommand,
+} from '../application/commands/set-fixed-expense-paid.command';
 import type { SerializedFixedExpense } from '../domain/fixed-expense.entities';
 import type { FixedExpenseInput } from '@/lib/validators/fixed-expense';
 
@@ -40,6 +44,31 @@ export async function updateFixedExpenseAction(
     const { item } = await updateFixedExpenseCommand(user.id, id, data);
     revalidate();
     return actionSuccess(item);
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+export async function setFixedExpensePaidAction(
+  id: string,
+  paid: boolean,
+): Promise<ActionResult<SerializedFixedExpense>> {
+  try {
+    const user = await requireUser();
+    const { item } = await setFixedExpensePaidCommand(user.id, id, paid);
+    revalidate();
+    return actionSuccess(item);
+  } catch (err) {
+    return actionError(err);
+  }
+}
+
+export async function clearFixedExpensesPaidAction(): Promise<ActionResult<{ count: number }>> {
+  try {
+    const user = await requireUser();
+    const { count } = await clearFixedExpensesPaidCommand(user.id);
+    revalidate();
+    return actionSuccess({ count });
   } catch (err) {
     return actionError(err);
   }

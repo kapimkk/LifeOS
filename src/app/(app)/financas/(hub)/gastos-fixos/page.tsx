@@ -19,7 +19,10 @@ export default async function FinanceFixedExpensesPage() {
 
   return (
     <>
-      <PageHeader title="Finanças" description="Acompanhe investimentos e gastos fixos do mês." />
+      <PageHeader
+        title="Finanças"
+        description="Marque o que já foi pago e limpe as marcações quando o mês recomeçar."
+      />
       <FixedExpensesSection initialItems={items} initialTotal={total} currency={user.currency} />
     </>
   );

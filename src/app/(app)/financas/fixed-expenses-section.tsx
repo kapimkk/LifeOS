@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { CalendarClock, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { CalendarClock, Eraser, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -14,7 +15,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { FixedExpenseDialog } from './fixed-expense-dialog';
-import { deleteFixedExpenseAction } from '@/modules/finance/interfaces/fixed-expense-actions';
+import {
+  clearFixedExpensesPaidAction,
+  deleteFixedExpenseAction,
+  setFixedExpensePaidAction,
+} from '@/modules/finance/interfaces/fixed-expense-actions';
 import type { SerializedFixedExpense } from '@/modules/finance/domain/fixed-expense.entities';
 import { formatCurrency } from '@/lib/utils';
 
@@ -30,12 +35,20 @@ export function FixedExpensesSection({ initialItems, initialTotal, currency }: P
   const [openDialog, setOpenDialog] = useState(false);
   const [editing, setEditing] = useState<SerializedFixedExpense | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
   const [, startTransition] = useTransition();
 
   const sorted = useMemo(
     () => [...items].sort((a, b) => a.dueDate - b.dueDate || a.name.localeCompare(b.name)),
     [items],
   );
+
+  const paidTotal = useMemo(
+    () => items.filter((item) => item.paid).reduce((acc, item) => acc + item.amount, 0),
+    [items],
+  );
+  const pendingTotal = total - paidTotal;
+  const hasPaid = items.some((item) => item.paid);
 
   function recalcTotal(list: SerializedFixedExpense[]) {
     return list.reduce((acc, i) => acc + i.amount, 0);
@@ -47,6 +60,38 @@ export function FixedExpensesSection({ initialItems, initialTotal, currency }: P
       const next = idx >= 0 ? prev.map((i) => (i.id === item.id ? item : i)) : [item, ...prev];
       setTotal(recalcTotal(next));
       return next;
+    });
+  }
+
+  function handleTogglePaid(item: SerializedFixedExpense, paid: boolean) {
+    const previous = items;
+    const next = items.map((current) => (current.id === item.id ? { ...current, paid } : current));
+    setItems(next);
+    setPendingId(item.id);
+    startTransition(async () => {
+      const result = await setFixedExpensePaidAction(item.id, paid);
+      if (!result.success) {
+        setItems(previous);
+        toast.error(result.error);
+      }
+      setPendingId(null);
+    });
+  }
+
+  function handleClearPaid() {
+    if (!hasPaid || clearing) return;
+    const previous = items;
+    setClearing(true);
+    setItems(items.map((item) => ({ ...item, paid: false })));
+    startTransition(async () => {
+      const result = await clearFixedExpensesPaidAction();
+      if (!result.success) {
+        setItems(previous);
+        toast.error(result.error);
+      } else {
+        toast.success('Marcações de pagamento limpas');
+      }
+      setClearing(false);
     });
   }
 
@@ -81,13 +126,26 @@ export function FixedExpensesSection({ initialItems, initialTotal, currency }: P
         <CardContent>
           <p className="text-3xl font-bold tracking-tight">{formatCurrency(total, currency)}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {items.length} despesa{items.length !== 1 ? 's' : ''} recorrente
-            {items.length !== 1 ? 's' : ''} no mês
+            Pendente {formatCurrency(pendingTotal, currency)} · Pago{' '}
+            {formatCurrency(paidTotal, currency)}
           </p>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!hasPaid || clearing}
+          onClick={handleClearPaid}
+        >
+          {clearing ? (
+            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+          ) : (
+            <Eraser className="mr-1 h-4 w-4" />
+          )}
+          Limpar marcações
+        </Button>
         <Button
           size="sm"
           onClick={() => {
@@ -112,6 +170,7 @@ export function FixedExpensesSection({ initialItems, initialTotal, currency }: P
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-16">Pago</TableHead>
                   <TableHead className="w-24">Vencimento</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
@@ -122,9 +181,19 @@ export function FixedExpensesSection({ initialItems, initialTotal, currency }: P
                 {sorted.map((item) => {
                   const isPending = pendingId === item.id;
                   return (
-                    <TableRow key={item.id}>
+                    <TableRow key={item.id} className={item.paid ? 'opacity-70' : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={item.paid}
+                          disabled={isPending || clearing}
+                          aria-label={`Marcar ${item.name} como pago`}
+                          onCheckedChange={(checked) => handleTogglePaid(item, checked === true)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">Dia {item.dueDate}</TableCell>
-                      <TableCell>{item.name}</TableCell>
+                      <TableCell className={item.paid ? 'line-through' : undefined}>
+                        {item.name}
+                      </TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(item.amount, currency)}
                       </TableCell>

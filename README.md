@@ -26,9 +26,10 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 
 ### Finanças (rota `/financas`)
 
-- Menu **Finanças** com abas: **Investimentos** e **Gastos Fixos**
+- Menu **Finanças** com abas: **Lançamentos**, **Investimentos**, **Gastos Fixos** e **A receber**
 - Investimentos: caixinhas com tipo, valor, cor e % do total (dados na tabela `Investment`)
-- Gastos fixos: despesas mensais com dia de vencimento e card de total
+- Gastos fixos: despesas mensais com dia de vencimento, checkbox de pago e ação para limpar as marcações
+- A receber: quem te deve, com valor, observação opcional e total em aberto
 - Lançamentos legados em `/financas/lancamentos` (transações)
 - CRUD de transações, categorias, recorrência, cartão e parcelamento
 

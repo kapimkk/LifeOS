@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarClock, Receipt, TrendingUp } from 'lucide-react';
+import { CalendarClock, HandCoins, Receipt, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TABS = [
   { href: '/financas/lancamentos', label: 'Lançamentos', icon: Receipt },
   { href: '/financas/investimentos', label: 'Investimentos', icon: TrendingUp },
   { href: '/financas/gastos-fixos', label: 'Gastos Fixos', icon: CalendarClock },
+  { href: '/financas/a-receber', label: 'A receber', icon: HandCoins },
 ] as const;
 
 export function FinanceHubTabs() {

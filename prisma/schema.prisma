@@ -113,6 +113,7 @@ model User {
   investments       Investment[]
   wishItems         WishItem[]
   fixedExpenses     FixedExpense[]
+  receivables       Receivable[]
   resources         Resource[]
   journeys          Journey[]
   routineItems      RoutineItem[]
@@ -264,11 +265,30 @@ model FixedExpense {
   name      String
   amount    Decimal  @db.Decimal(14, 2)
   dueDate   Int
+  paid      Boolean  @default(false)
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, dueDate])
+}
+
+// ----------------------------------------------------------
+// A RECEBER — quem deve ao usuário
+// ----------------------------------------------------------
+
+model Receivable {
+  id         String   @id @default(cuid())
+  userId     String
+  debtorName String
+  amount     Decimal  @db.Decimal(14, 2)
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ----------------------------------------------------------

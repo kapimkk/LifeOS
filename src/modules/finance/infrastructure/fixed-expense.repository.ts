@@ -10,6 +10,7 @@ function serialize(row: {
   name: string;
   amount: Prisma.Decimal;
   dueDate: number;
+  paid: boolean;
   createdAt: Date;
 }): SerializedFixedExpense {
   return {
@@ -17,6 +18,7 @@ function serialize(row: {
     name: row.name,
     amount: Number(row.amount),
     dueDate: row.dueDate,
+    paid: row.paid,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -65,6 +67,23 @@ export const fixedExpenseRepository = {
       },
     });
     return serialize(updated);
+  },
+
+  async setPaid(userId: string, id: string, paid: boolean): Promise<SerializedFixedExpense> {
+    await this.assertOwnership(userId, id);
+    const updated = await prisma.fixedExpense.update({
+      where: { id },
+      data: { paid },
+    });
+    return serialize(updated);
+  },
+
+  async clearPaid(userId: string): Promise<number> {
+    const result = await prisma.fixedExpense.updateMany({
+      where: { userId, paid: true },
+      data: { paid: false },
+    });
+    return result.count;
   },
 
   async remove(userId: string, id: string): Promise<void> {
