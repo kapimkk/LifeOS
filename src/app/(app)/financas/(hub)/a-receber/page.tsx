@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { PageHeader } from '@/components/layout/page-header';
 import { requireUser } from '@/shared/auth/session';
 import {
   getReceivablesTotalQuery,
@@ -17,13 +16,5 @@ export default async function FinanceReceivablesPage() {
     getReceivablesTotalQuery(user.id),
   ]);
 
-  return (
-    <>
-      <PageHeader
-        title="Finanças"
-        description="Registre quem te deve e acompanhe o total a receber."
-      />
-      <ReceivablesSection initialItems={items} initialTotal={total} currency={user.currency} />
-    </>
-  );
+  return <ReceivablesSection initialItems={items} initialTotal={total} currency={user.currency} />;
 }
