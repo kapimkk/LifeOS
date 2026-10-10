@@ -3,7 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/shared/auth/session';
 import { actionError, actionSuccess, type ActionResult } from '@/shared/types/action-result';
-import { fixedExpenseSchema } from '@/lib/validators/fixed-expense';
+import {
+  fixedExpenseGroupSchema,
+  fixedExpenseSchema,
+  type FixedExpenseGroup,
+} from '@/lib/validators/fixed-expense';
 import { createFixedExpenseCommand } from '../application/commands/create-fixed-expense.command';
 import { updateFixedExpenseCommand } from '../application/commands/update-fixed-expense.command';
 import { deleteFixedExpenseCommand } from '../application/commands/delete-fixed-expense.command';
@@ -14,7 +18,13 @@ import {
 import type { SerializedFixedExpense } from '../domain/fixed-expense.entities';
 import type { FixedExpenseInput } from '@/lib/validators/fixed-expense';
 
-const PATHS = ['/financas', '/financas/gastos-fixos', '/dashboard'] as const;
+const PATHS = [
+  '/financas',
+  '/financas/gastos-fixos',
+  '/financas/gastos-fixos/planos',
+  '/financas/gastos-fixos/investimentos',
+  '/dashboard',
+] as const;
 
 function revalidate() {
   for (const p of PATHS) revalidatePath(p);
@@ -22,11 +32,13 @@ function revalidate() {
 
 export async function createFixedExpenseAction(
   input: FixedExpenseInput,
+  group: FixedExpenseGroup,
 ): Promise<ActionResult<SerializedFixedExpense>> {
   try {
     const user = await requireUser();
     const data = fixedExpenseSchema.parse(input);
-    const { item } = await createFixedExpenseCommand(user.id, data);
+    const expenseGroup = fixedExpenseGroupSchema.parse(group);
+    const { item } = await createFixedExpenseCommand(user.id, data, expenseGroup);
     revalidate();
     return actionSuccess(item);
   } catch (err) {
@@ -63,10 +75,13 @@ export async function setFixedExpensePaidAction(
   }
 }
 
-export async function clearFixedExpensesPaidAction(): Promise<ActionResult<{ count: number }>> {
+export async function clearFixedExpensesPaidAction(
+  group: FixedExpenseGroup,
+): Promise<ActionResult<{ count: number }>> {
   try {
     const user = await requireUser();
-    const { count } = await clearFixedExpensesPaidCommand(user.id);
+    const expenseGroup = fixedExpenseGroupSchema.parse(group);
+    const { count } = await clearFixedExpensesPaidCommand(user.id, expenseGroup);
     revalidate();
     return actionSuccess({ count });
   } catch (err) {

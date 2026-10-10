@@ -23,7 +23,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { fixedExpenseSchema, type FixedExpenseInput } from '@/lib/validators/fixed-expense';
+import {
+  fixedExpenseSchema,
+  type FixedExpenseGroup,
+  type FixedExpenseInput,
+} from '@/lib/validators/fixed-expense';
 import {
   createFixedExpenseAction,
   updateFixedExpenseAction,
@@ -34,12 +38,13 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   editing: SerializedFixedExpense | null;
+  group: FixedExpenseGroup;
   onSaved: (item: SerializedFixedExpense) => void;
 }
 
 const DUE_DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
-export function FixedExpenseDialog({ open, onOpenChange, editing, onSaved }: Props) {
+export function FixedExpenseDialog({ open, onOpenChange, editing, group, onSaved }: Props) {
   const [isPending, startTransition] = useTransition();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -73,7 +78,7 @@ export function FixedExpenseDialog({ open, onOpenChange, editing, onSaved }: Pro
     startTransition(async () => {
       const result = editing
         ? await updateFixedExpenseAction(editing.id, values)
-        : await createFixedExpenseAction(values);
+        : await createFixedExpenseAction(values, group);
 
       if (!result.success) {
         setSubmitError(result.error);

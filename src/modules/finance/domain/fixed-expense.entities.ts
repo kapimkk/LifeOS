@@ -1,3 +1,5 @@
+import type { FixedExpenseGroup } from '@/lib/validators/fixed-expense';
+
 export interface FixedExpense {
   id: string;
   userId: string;
@@ -5,6 +7,7 @@ export interface FixedExpense {
   amount: number;
   dueDate: number;
   paid: boolean;
+  group: FixedExpenseGroup;
   createdAt: Date;
 }
 
@@ -14,5 +17,6 @@ export interface SerializedFixedExpense {
   amount: number;
   dueDate: number;
   paid: boolean;
+  group: FixedExpenseGroup;
   createdAt: string;
 }

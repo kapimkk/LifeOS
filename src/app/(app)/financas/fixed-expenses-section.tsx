@@ -21,15 +21,19 @@ import {
   setFixedExpensePaidAction,
 } from '@/modules/finance/interfaces/fixed-expense-actions';
 import type { SerializedFixedExpense } from '@/modules/finance/domain/fixed-expense.entities';
+import type { FixedExpenseGroup } from '@/lib/validators/fixed-expense';
+import { fixedExpenseGroupMeta } from './fixed-expense-groups';
 import { formatCurrency } from '@/lib/utils';
 
 interface Props {
+  group: FixedExpenseGroup;
   initialItems: SerializedFixedExpense[];
   initialTotal: number;
   currency: string;
 }
 
-export function FixedExpensesSection({ initialItems, initialTotal, currency }: Props) {
+export function FixedExpensesSection({ group, initialItems, initialTotal, currency }: Props) {
+  const meta = fixedExpenseGroupMeta(group);
   const [items, setItems] = useState(initialItems);
   const [total, setTotal] = useState(initialTotal);
   const [openDialog, setOpenDialog] = useState(false);
@@ -84,7 +88,7 @@ export function FixedExpensesSection({ initialItems, initialTotal, currency }: P
     setClearing(true);
     setItems(items.map((item) => ({ ...item, paid: false })));
     startTransition(async () => {
-      const result = await clearFixedExpensesPaidAction();
+      const result = await clearFixedExpensesPaidAction(group);
       if (!result.success) {
         setItems(previous);
         toast.error(result.error);
@@ -120,7 +124,7 @@ export function FixedExpensesSection({ initialItems, initialTotal, currency }: P
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
             <CalendarClock className="h-4 w-4" />
-            Valor total de gastos fixos
+            Total · {meta.label}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -161,7 +165,7 @@ export function FixedExpensesSection({ initialItems, initialTotal, currency }: P
       {sorted.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            Nenhum gasto fixo cadastrado. Adicione aluguel, assinaturas e outras contas mensais.
+            {meta.empty}
           </CardContent>
         </Card>
       ) : (
@@ -238,6 +242,7 @@ export function FixedExpensesSection({ initialItems, initialTotal, currency }: P
         open={openDialog}
         onOpenChange={setOpenDialog}
         editing={editing}
+        group={group}
         onSaved={handleSaved}
       />
     </div>

@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/api';
 import type { SerializedFixedExpense } from '../domain/fixed-expense.entities';
-import type { FixedExpenseInput } from '@/lib/validators/fixed-expense';
+import type { FixedExpenseGroup, FixedExpenseInput } from '@/lib/validators/fixed-expense';
 
 function serialize(row: {
   id: string;
@@ -11,6 +11,7 @@ function serialize(row: {
   amount: Prisma.Decimal;
   dueDate: number;
   paid: boolean;
+  group: FixedExpenseGroup;
   createdAt: Date;
 }): SerializedFixedExpense {
   return {
@@ -19,34 +20,40 @@ function serialize(row: {
     amount: Number(row.amount),
     dueDate: row.dueDate,
     paid: row.paid,
+    group: row.group,
     createdAt: row.createdAt.toISOString(),
   };
 }
 
 export const fixedExpenseRepository = {
-  async findByUserId(userId: string): Promise<SerializedFixedExpense[]> {
+  async findByUserId(userId: string, group: FixedExpenseGroup): Promise<SerializedFixedExpense[]> {
     const items = await prisma.fixedExpense.findMany({
-      where: { userId },
+      where: { userId, group },
       orderBy: { dueDate: 'asc' },
     });
     return items.map(serialize);
   },
 
-  async totalByUserId(userId: string): Promise<number> {
+  async totalByUserId(userId: string, group: FixedExpenseGroup): Promise<number> {
     const agg = await prisma.fixedExpense.aggregate({
-      where: { userId },
+      where: { userId, group },
       _sum: { amount: true },
     });
     return Number(agg._sum.amount ?? 0);
   },
 
-  async create(userId: string, data: FixedExpenseInput): Promise<SerializedFixedExpense> {
+  async create(
+    userId: string,
+    data: FixedExpenseInput,
+    group: FixedExpenseGroup,
+  ): Promise<SerializedFixedExpense> {
     const created = await prisma.fixedExpense.create({
       data: {
         userId,
         name: data.name,
         amount: new Prisma.Decimal(data.amount),
         dueDate: data.dueDate,
+        group,
       },
     });
     return serialize(created);
@@ -78,9 +85,9 @@ export const fixedExpenseRepository = {
     return serialize(updated);
   },
 
-  async clearPaid(userId: string): Promise<number> {
+  async clearPaid(userId: string, group: FixedExpenseGroup): Promise<number> {
     const result = await prisma.fixedExpense.updateMany({
-      where: { userId, paid: true },
+      where: { userId, group, paid: true },
       data: { paid: false },
     });
     return result.count;

@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { safeText } from '@/lib/zod-sanitize';
 
+export const fixedExpenseGroupSchema = z.enum(['PLANOS', 'INVESTIMENTOS', 'GERAL']);
+
+export type FixedExpenseGroup = z.infer<typeof fixedExpenseGroupSchema>;
+
 export const fixedExpenseSchema = z.object({
   name: safeText(1, 120, 'Informe o nome'),
   amount: z

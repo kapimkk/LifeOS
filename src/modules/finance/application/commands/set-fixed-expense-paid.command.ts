@@ -1,3 +1,4 @@
+import type { FixedExpenseGroup } from '@/lib/validators/fixed-expense';
 import { fixedExpenseRepository } from '../../infrastructure/fixed-expense.repository';
 
 export async function setFixedExpensePaidCommand(userId: string, id: string, paid: boolean) {
@@ -5,7 +6,7 @@ export async function setFixedExpensePaidCommand(userId: string, id: string, pai
   return { item };
 }
 
-export async function clearFixedExpensesPaidCommand(userId: string) {
-  const count = await fixedExpenseRepository.clearPaid(userId);
+export async function clearFixedExpensesPaidCommand(userId: string, group: FixedExpenseGroup) {
+  const count = await fixedExpenseRepository.clearPaid(userId, group);
   return { count };
 }

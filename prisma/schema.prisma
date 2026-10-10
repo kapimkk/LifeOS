@@ -75,6 +75,12 @@ enum WishCategory {
   LAZER
 }
 
+enum FixedExpenseGroup {
+  PLANOS
+  INVESTIMENTOS
+  GERAL
+}
+
 enum WeekDay {
   MONDAY
   TUESDAY
@@ -261,17 +267,19 @@ model WishItem {
 // ----------------------------------------------------------
 
 model FixedExpense {
-  id        String   @id @default(cuid())
+  id        String            @id @default(cuid())
   userId    String
   name      String
-  amount    Decimal  @db.Decimal(14, 2)
+  amount    Decimal           @db.Decimal(14, 2)
   dueDate   Int
-  paid      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  paid      Boolean           @default(false)
+  group     FixedExpenseGroup @default(GERAL)
+  createdAt DateTime          @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, dueDate])
+  @@index([userId, group])
 }
 
 // ----------------------------------------------------------
