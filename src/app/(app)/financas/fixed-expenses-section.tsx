@@ -22,17 +22,24 @@ import {
 } from '@/modules/finance/interfaces/fixed-expense-actions';
 import type { SerializedFixedExpense } from '@/modules/finance/domain/fixed-expense.entities';
 import type { FixedExpenseGroup } from '@/lib/validators/fixed-expense';
-import { fixedExpenseGroupMeta } from './fixed-expense-groups';
+import { FIXED_EXPENSE_GROUPS, fixedExpenseGroupMeta } from './fixed-expense-groups';
 import { formatCurrency } from '@/lib/utils';
 
 interface Props {
   group: FixedExpenseGroup;
   initialItems: SerializedFixedExpense[];
   initialTotal: number;
+  initialGroupTotals: Record<FixedExpenseGroup, number>;
   currency: string;
 }
 
-export function FixedExpensesSection({ group, initialItems, initialTotal, currency }: Props) {
+export function FixedExpensesSection({
+  group,
+  initialItems,
+  initialTotal,
+  initialGroupTotals,
+  currency,
+}: Props) {
   const meta = fixedExpenseGroupMeta(group);
   const [items, setItems] = useState(initialItems);
   const [total, setTotal] = useState(initialTotal);
@@ -53,6 +60,11 @@ export function FixedExpensesSection({ group, initialItems, initialTotal, curren
   );
   const pendingTotal = total - paidTotal;
   const hasPaid = items.some((item) => item.paid);
+  const groupTotals = useMemo(
+    () => ({ ...initialGroupTotals, [group]: total }),
+    [initialGroupTotals, group, total],
+  );
+  const grandTotal = groupTotals.PLANOS + groupTotals.INVESTIMENTOS + groupTotals.GERAL;
 
   function recalcTotal(list: SerializedFixedExpense[]) {
     return list.reduce((acc, i) => acc + i.amount, 0);
@@ -120,6 +132,35 @@ export function FixedExpensesSection({ group, initialItems, initialTotal, curren
 
   return (
     <div className="space-y-4">
+      <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-transparent">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
+            <CalendarClock className="h-4 w-4" />
+            Soma de todos os grupos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-3xl font-bold tracking-tight">
+            {formatCurrency(grandTotal, currency)}
+          </p>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
+            {FIXED_EXPENSE_GROUPS.map((item) => (
+              <div
+                key={item.group}
+                className={
+                  item.group === group
+                    ? 'rounded-md bg-primary/10 px-2 py-1.5'
+                    : 'rounded-md px-2 py-1.5'
+                }
+              >
+                <p className="text-xs text-muted-foreground">{item.label}</p>
+                <p className="font-medium">{formatCurrency(groupTotals[item.group], currency)}</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">

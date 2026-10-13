@@ -4,6 +4,7 @@ import type { FixedExpenseGroup } from '@/lib/validators/fixed-expense';
 import { fixedExpenseGroupMeta } from '@/app/(app)/financas/fixed-expense-groups';
 import { FixedExpensesSection } from '@/app/(app)/financas/fixed-expenses-section';
 import {
+  getFixedExpenseGroupTotalsQuery,
   getFixedExpensesTotalQuery,
   listFixedExpensesQuery,
 } from '@/modules/finance/application/queries/list-fixed-expenses.query';
@@ -15,9 +16,10 @@ export function fixedExpenseGroupMetadata(group: FixedExpenseGroup): Metadata {
 
 export async function FixedExpenseGroupPage({ group }: { group: FixedExpenseGroup }) {
   const user = await requireUser();
-  const [items, total] = await Promise.all([
+  const [items, total, groupTotals] = await Promise.all([
     listFixedExpensesQuery(user.id, group),
     getFixedExpensesTotalQuery(user.id, group),
+    getFixedExpenseGroupTotalsQuery(user.id),
   ]);
 
   return (
@@ -25,6 +27,7 @@ export async function FixedExpenseGroupPage({ group }: { group: FixedExpenseGrou
       group={group}
       initialItems={items}
       initialTotal={total}
+      initialGroupTotals={groupTotals}
       currency={user.currency}
     />
   );

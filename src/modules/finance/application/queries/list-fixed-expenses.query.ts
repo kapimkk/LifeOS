@@ -8,3 +8,7 @@ export async function listFixedExpensesQuery(userId: string, group: FixedExpense
 export async function getFixedExpensesTotalQuery(userId: string, group: FixedExpenseGroup) {
   return fixedExpenseRepository.totalByUserId(userId, group);
 }
+
+export async function getFixedExpenseGroupTotalsQuery(userId: string) {
+  return fixedExpenseRepository.totalsByUserId(userId);
+}
