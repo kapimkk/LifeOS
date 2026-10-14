@@ -12,3 +12,7 @@ export async function getFixedExpensesTotalQuery(userId: string, group: FixedExp
 export async function getFixedExpenseGroupTotalsQuery(userId: string) {
   return fixedExpenseRepository.totalsByUserId(userId);
 }
+
+export async function getFixedExpensePendingTotalsQuery(userId: string) {
+  return fixedExpenseRepository.pendingTotalsByUserId(userId);
+}

@@ -30,6 +30,7 @@ interface Props {
   initialItems: SerializedFixedExpense[];
   initialTotal: number;
   initialGroupTotals: Record<FixedExpenseGroup, number>;
+  initialPendingTotals: Record<FixedExpenseGroup, number>;
   currency: string;
 }
 
@@ -38,6 +39,7 @@ export function FixedExpensesSection({
   initialItems,
   initialTotal,
   initialGroupTotals,
+  initialPendingTotals,
   currency,
 }: Props) {
   const meta = fixedExpenseGroupMeta(group);
@@ -65,6 +67,11 @@ export function FixedExpensesSection({
     [initialGroupTotals, group, total],
   );
   const grandTotal = groupTotals.PLANOS + groupTotals.INVESTIMENTOS + groupTotals.GERAL;
+  const pendingByGroup = useMemo(
+    () => ({ ...initialPendingTotals, [group]: pendingTotal }),
+    [initialPendingTotals, group, pendingTotal],
+  );
+  const grandPending = pendingByGroup.PLANOS + pendingByGroup.INVESTIMENTOS + pendingByGroup.GERAL;
 
   function recalcTotal(list: SerializedFixedExpense[]) {
     return list.reduce((acc, i) => acc + i.amount, 0);
@@ -132,34 +139,67 @@ export function FixedExpensesSection({
 
   return (
     <div className="space-y-4">
-      <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-transparent">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
-            <CalendarClock className="h-4 w-4" />
-            Soma de todos os grupos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-bold tracking-tight">
-            {formatCurrency(grandTotal, currency)}
-          </p>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
-            {FIXED_EXPENSE_GROUPS.map((item) => (
-              <div
-                key={item.group}
-                className={
-                  item.group === group
-                    ? 'rounded-md bg-primary/10 px-2 py-1.5'
-                    : 'rounded-md px-2 py-1.5'
-                }
-              >
-                <p className="text-xs text-muted-foreground">{item.label}</p>
-                <p className="font-medium">{formatCurrency(groupTotals[item.group], currency)}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-transparent">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
+              <CalendarClock className="h-4 w-4" />
+              Soma de todos os grupos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tracking-tight">
+              {formatCurrency(grandTotal, currency)}
+            </p>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
+              {FIXED_EXPENSE_GROUPS.map((item) => (
+                <div
+                  key={item.group}
+                  className={
+                    item.group === group
+                      ? 'rounded-md bg-primary/10 px-2 py-1.5'
+                      : 'rounded-md px-2 py-1.5'
+                  }
+                >
+                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                  <p className="font-medium">{formatCurrency(groupTotals[item.group], currency)}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base font-medium text-muted-foreground">
+              <CalendarClock className="h-4 w-4" />
+              Falta pagar
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tracking-tight">
+              {formatCurrency(grandPending, currency)}
+            </p>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
+              {FIXED_EXPENSE_GROUPS.map((item) => (
+                <div
+                  key={item.group}
+                  className={
+                    item.group === group
+                      ? 'rounded-md bg-amber-500/10 px-2 py-1.5'
+                      : 'rounded-md px-2 py-1.5'
+                  }
+                >
+                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                  <p className="font-medium">
+                    {formatCurrency(pendingByGroup[item.group], currency)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader className="pb-2">

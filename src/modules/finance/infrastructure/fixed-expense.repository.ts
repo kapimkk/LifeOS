@@ -59,6 +59,23 @@ export const fixedExpenseRepository = {
     return totals;
   },
 
+  async pendingTotalsByUserId(userId: string): Promise<Record<FixedExpenseGroup, number>> {
+    const rows = await prisma.fixedExpense.groupBy({
+      by: ['group'],
+      where: { userId, paid: false },
+      _sum: { amount: true },
+    });
+    const totals: Record<FixedExpenseGroup, number> = {
+      PLANOS: 0,
+      INVESTIMENTOS: 0,
+      GERAL: 0,
+    };
+    for (const row of rows) {
+      totals[row.group] = Number(row._sum.amount ?? 0);
+    }
+    return totals;
+  },
+
   async create(
     userId: string,
     data: FixedExpenseInput,
