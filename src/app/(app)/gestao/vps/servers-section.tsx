@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ServerDialog } from './server-dialog';
 import { PROJECT_STATUS_LABEL, SERVER_STATUS_LABEL } from '../labels';
+import { ListPagination, filterSelectClass, paginate } from '../list-controls';
 import { deleteVpsAction } from '@/modules/gestao/interfaces/actions';
 import type { SerializedProject, SerializedVps } from '@/modules/gestao/domain/entities';
+import type { ServerStatus } from '@/lib/validators/gestao';
 import { formatCurrency } from '@/lib/utils';
 
 interface Props {
@@ -21,20 +23,36 @@ interface Props {
 export function ServersSection({ initialServers, projects, currency }: Props) {
   const [items, setItems] = useState(initialServers);
   const [query, setQuery] = useState('');
+  const [status, setStatus] = useState<ServerStatus | 'ALL'>('ALL');
+  const [hosting, setHosting] = useState<'ALL' | 'WITH' | 'WITHOUT'>('ALL');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SerializedVps | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  const visible = useMemo(() => {
+  const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) return items;
-    return items.filter((item) =>
-      [item.name, item.provider, item.ipAddress, item.hostname]
+    return items.filter((item) => {
+      if (status !== 'ALL' && item.status !== status) return false;
+      const hosted = projects.some((project) => project.serverId === item.id);
+      if (hosting === 'WITH' && !hosted) return false;
+      if (hosting === 'WITHOUT' && hosted) return false;
+      if (!term) return true;
+      return [item.name, item.provider, item.ipAddress, item.hostname, item.region]
         .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(term)),
-    );
-  }, [items, query]);
+        .some((value) => value!.toLowerCase().includes(term));
+    });
+  }, [items, projects, query, status, hosting]);
+
+  const pageState = paginate(filtered, page, pageSize);
+
+  useEffect(() => {
+    if (page !== pageState.current) setPage(pageState.current);
+  }, [page, pageState.current]);
+
+  const filtersActive = query.trim() !== '' || status !== 'ALL' || hosting !== 'ALL';
 
   function handleSaved(item: SerializedVps) {
     setItems((prev) => {
@@ -67,10 +85,57 @@ export function ServersSection({ initialServers, projects, currency }: Props) {
       <div className="flex flex-wrap gap-2">
         <Input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setPage(1);
+          }}
           placeholder="Buscar servidor, IP ou provedor"
           className="max-w-sm"
         />
+        <select
+          value={status}
+          onChange={(event) => {
+            setStatus(event.target.value as ServerStatus | 'ALL');
+            setPage(1);
+          }}
+          className={filterSelectClass}
+          aria-label="Filtrar por status"
+        >
+          <option value="ALL">Todos os status</option>
+          {(Object.keys(SERVER_STATUS_LABEL) as ServerStatus[]).map((item) => (
+            <option key={item} value={item}>
+              {SERVER_STATUS_LABEL[item]}
+            </option>
+          ))}
+        </select>
+        <select
+          value={hosting}
+          onChange={(event) => {
+            setHosting(event.target.value as 'ALL' | 'WITH' | 'WITHOUT');
+            setPage(1);
+          }}
+          className={filterSelectClass}
+          aria-label="Filtrar por projetos hospedados"
+        >
+          <option value="ALL">Com ou sem projeto</option>
+          <option value="WITH">Com projeto</option>
+          <option value="WITHOUT">Sem projeto</option>
+        </select>
+        {filtersActive && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setQuery('');
+              setStatus('ALL');
+              setHosting('ALL');
+              setPage(1);
+            }}
+          >
+            Limpar filtros
+          </Button>
+        )}
         <Button
           className="ml-auto"
           size="sm"
@@ -83,15 +148,15 @@ export function ServersSection({ initialServers, projects, currency }: Props) {
           Nova VPS
         </Button>
       </div>
-      {visible.length === 0 ? (
+      {pageState.total === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            Nenhum servidor cadastrado.
+            {filtersActive ? 'Nenhum servidor para esses filtros.' : 'Nenhum servidor cadastrado.'}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3">
-          {visible.map((item) => {
+          {pageState.slice.map((item) => {
             const hosted = projects.filter((project) => project.serverId === item.id);
             const specs = [
               item.cpu,
@@ -192,6 +257,17 @@ export function ServersSection({ initialServers, projects, currency }: Props) {
           })}
         </div>
       )}
+      <ListPagination
+        page={pageState.current}
+        pages={pageState.pages}
+        total={pageState.total}
+        pageSize={pageSize}
+        onPage={setPage}
+        onPageSize={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+      />
       <ServerDialog open={open} onOpenChange={setOpen} editing={editing} onSaved={handleSaved} />
     </div>
   );

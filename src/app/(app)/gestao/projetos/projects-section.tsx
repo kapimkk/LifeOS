@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { ExternalLink, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ProjectDialog } from './project-dialog';
 import { PROJECT_STATUS_LABEL } from '../labels';
+import { ListPagination, filterSelectClass, paginate } from '../list-controls';
 import { deleteProjectAction } from '@/modules/gestao/interfaces/actions';
 import type {
   SerializedCustomer,
@@ -26,21 +27,48 @@ export function ProjectsSection({ initialProjects, customers, servers }: Props) 
   const [items, setItems] = useState(initialProjects);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<ProjectStatus | 'ALL'>('ALL');
+  const [customerId, setCustomerId] = useState('ALL');
+  const [serverId, setServerId] = useState('ALL');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SerializedProject | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  const visible = useMemo(() => {
+  const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
     return items.filter((item) => {
       if (status !== 'ALL' && item.status !== status) return false;
+      if (customerId === 'NONE' && item.customerId) return false;
+      if (customerId !== 'ALL' && customerId !== 'NONE' && item.customerId !== customerId) {
+        return false;
+      }
+      if (serverId === 'NONE' && item.serverId) return false;
+      if (serverId !== 'ALL' && serverId !== 'NONE' && item.serverId !== serverId) return false;
       if (!term) return true;
       return [item.name, item.summary, item.customerName, item.serverName, item.stack.join(' ')]
         .filter(Boolean)
         .some((value) => value!.toLowerCase().includes(term));
     });
-  }, [items, query, status]);
+  }, [items, query, status, customerId, serverId]);
+
+  const pageState = paginate(filtered, page, pageSize);
+
+  useEffect(() => {
+    if (page !== pageState.current) setPage(pageState.current);
+  }, [page, pageState.current]);
+
+  const filtersActive =
+    query.trim() !== '' || status !== 'ALL' || customerId !== 'ALL' || serverId !== 'ALL';
+
+  function resetFilters() {
+    setQuery('');
+    setStatus('ALL');
+    setCustomerId('ALL');
+    setServerId('ALL');
+    setPage(1);
+  }
 
   function handleSaved(item: SerializedProject) {
     setItems((prev) => {
@@ -72,14 +100,21 @@ export function ProjectsSection({ initialProjects, customers, servers }: Props) 
       <div className="flex flex-wrap items-center gap-2">
         <Input
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setPage(1);
+          }}
           placeholder="Buscar projeto, cliente ou stack"
           className="max-w-sm"
         />
         <select
           value={status}
-          onChange={(event) => setStatus(event.target.value as ProjectStatus | 'ALL')}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+          onChange={(event) => {
+            setStatus(event.target.value as ProjectStatus | 'ALL');
+            setPage(1);
+          }}
+          className={filterSelectClass}
+          aria-label="Filtrar por status"
         >
           <option value="ALL">Todos os status</option>
           {(Object.keys(PROJECT_STATUS_LABEL) as ProjectStatus[]).map((item) => (
@@ -88,6 +123,45 @@ export function ProjectsSection({ initialProjects, customers, servers }: Props) 
             </option>
           ))}
         </select>
+        <select
+          value={customerId}
+          onChange={(event) => {
+            setCustomerId(event.target.value);
+            setPage(1);
+          }}
+          className={filterSelectClass}
+          aria-label="Filtrar por cliente"
+        >
+          <option value="ALL">Todos os clientes</option>
+          <option value="NONE">Sem cliente</option>
+          {customers.map((customer) => (
+            <option key={customer.id} value={customer.id}>
+              {customer.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={serverId}
+          onChange={(event) => {
+            setServerId(event.target.value);
+            setPage(1);
+          }}
+          className={filterSelectClass}
+          aria-label="Filtrar por VPS"
+        >
+          <option value="ALL">Todas as VPS</option>
+          <option value="NONE">Sem VPS</option>
+          {servers.map((server) => (
+            <option key={server.id} value={server.id}>
+              {server.name}
+            </option>
+          ))}
+        </select>
+        {filtersActive && (
+          <Button type="button" variant="ghost" size="sm" onClick={resetFilters}>
+            Limpar filtros
+          </Button>
+        )}
         <Button
           className="ml-auto"
           size="sm"
@@ -101,15 +175,17 @@ export function ProjectsSection({ initialProjects, customers, servers }: Props) 
         </Button>
       </div>
 
-      {visible.length === 0 ? (
+      {pageState.total === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            Nenhum projeto aqui. Crie o primeiro e vincule cliente e servidor se quiser.
+            {filtersActive
+              ? 'Nenhum projeto para esses filtros.'
+              : 'Nenhum projeto aqui. Crie o primeiro e vincule cliente e servidor se quiser.'}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3">
-          {visible.map((item) => (
+          {pageState.slice.map((item) => (
             <Card key={item.id} className="overflow-hidden">
               <CardContent className="flex gap-4 p-4">
                 <span
@@ -199,6 +275,18 @@ export function ProjectsSection({ initialProjects, customers, servers }: Props) 
           ))}
         </div>
       )}
+
+      <ListPagination
+        page={pageState.current}
+        pages={pageState.pages}
+        total={pageState.total}
+        pageSize={pageSize}
+        onPage={setPage}
+        onPageSize={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+      />
 
       <ProjectDialog
         open={open}

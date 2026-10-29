@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ClientDialog } from './client-dialog';
 import { CLIENT_STATUS_LABEL, PROJECT_STATUS_LABEL } from '../labels';
+import { ListPagination, filterSelectClass, paginate } from '../list-controls';
 import { deleteCustomerAction } from '@/modules/gestao/interfaces/actions';
 import type { SerializedCustomer, SerializedProject } from '@/modules/gestao/domain/entities';
+import type { ClientStatus } from '@/lib/validators/gestao';
 
 interface Props {
   initialCustomers: SerializedCustomer[];
@@ -19,20 +21,38 @@ interface Props {
 export function ClientsSection({ initialCustomers, projects }: Props) {
   const [items, setItems] = useState(initialCustomers);
   const [query, setQuery] = useState('');
+  const [status, setStatus] = useState<ClientStatus | 'ALL'>('ALL');
+  const [link, setLink] = useState<'ALL' | 'WITH' | 'ACTIVE' | 'WITHOUT'>('ALL');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SerializedCustomer | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  const visible = useMemo(() => {
+  const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) return items;
-    return items.filter((item) =>
-      [item.name, item.company, item.email]
+    return items.filter((item) => {
+      if (status !== 'ALL' && item.status !== status) return false;
+      const linked = projects.filter((project) => project.customerId === item.id);
+      const active = linked.some((project) => project.status === 'ACTIVE');
+      if (link === 'WITH' && linked.length === 0) return false;
+      if (link === 'ACTIVE' && !active) return false;
+      if (link === 'WITHOUT' && linked.length > 0) return false;
+      if (!term) return true;
+      return [item.name, item.company, item.email]
         .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(term)),
-    );
-  }, [items, query]);
+        .some((value) => value!.toLowerCase().includes(term));
+    });
+  }, [items, projects, query, status, link]);
+
+  const pageState = paginate(filtered, page, pageSize);
+
+  useEffect(() => {
+    if (page !== pageState.current) setPage(pageState.current);
+  }, [page, pageState.current]);
+
+  const filtersActive = query.trim() !== '' || status !== 'ALL' || link !== 'ALL';
 
   function handleSaved(item: SerializedCustomer) {
     setItems((prev) => {
@@ -65,10 +85,58 @@ export function ClientsSection({ initialCustomers, projects }: Props) {
       <div className="flex flex-wrap gap-2">
         <Input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setPage(1);
+          }}
           placeholder="Buscar cliente"
           className="max-w-sm"
         />
+        <select
+          value={status}
+          onChange={(event) => {
+            setStatus(event.target.value as ClientStatus | 'ALL');
+            setPage(1);
+          }}
+          className={filterSelectClass}
+          aria-label="Filtrar por status"
+        >
+          <option value="ALL">Todos os status</option>
+          {(Object.keys(CLIENT_STATUS_LABEL) as ClientStatus[]).map((item) => (
+            <option key={item} value={item}>
+              {CLIENT_STATUS_LABEL[item]}
+            </option>
+          ))}
+        </select>
+        <select
+          value={link}
+          onChange={(event) => {
+            setLink(event.target.value as 'ALL' | 'WITH' | 'ACTIVE' | 'WITHOUT');
+            setPage(1);
+          }}
+          className={filterSelectClass}
+          aria-label="Filtrar por projeto"
+        >
+          <option value="ALL">Todos os vínculos</option>
+          <option value="ACTIVE">Com projeto ativo</option>
+          <option value="WITH">Com projeto</option>
+          <option value="WITHOUT">Sem projeto</option>
+        </select>
+        {filtersActive && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setQuery('');
+              setStatus('ALL');
+              setLink('ALL');
+              setPage(1);
+            }}
+          >
+            Limpar filtros
+          </Button>
+        )}
         <Button
           className="ml-auto"
           size="sm"
@@ -81,15 +149,15 @@ export function ClientsSection({ initialCustomers, projects }: Props) {
           Novo cliente
         </Button>
       </div>
-      {visible.length === 0 ? (
+      {pageState.total === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            Nenhum cliente cadastrado.
+            {filtersActive ? 'Nenhum cliente para esses filtros.' : 'Nenhum cliente cadastrado.'}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3">
-          {visible.map((item) => {
+          {pageState.slice.map((item) => {
             const linked = projects.filter((project) => project.customerId === item.id);
             const active = linked.filter((project) => project.status === 'ACTIVE');
             return (
@@ -160,6 +228,17 @@ export function ClientsSection({ initialCustomers, projects }: Props) {
           })}
         </div>
       )}
+      <ListPagination
+        page={pageState.current}
+        pages={pageState.pages}
+        total={pageState.total}
+        pageSize={pageSize}
+        onPage={setPage}
+        onPageSize={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+      />
       <ClientDialog open={open} onOpenChange={setOpen} editing={editing} onSaved={handleSaved} />
     </div>
   );

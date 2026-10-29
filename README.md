@@ -39,6 +39,7 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 - Um projeto pode ser vinculado a um cliente e a um servidor
 - VPS guarda provedor, rede, backups, estrutura de pastas e o que está hospedado
 - Cores, status, stack e textos livres para personalizar cada cadastro
+- Filtros e paginação em Projetos, Clientes e VPS
 - Senhas e chaves não são armazenadas
 
 ### Desejos (`/desejos`)
