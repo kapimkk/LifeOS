@@ -25,8 +25,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.info(`[reset-password] token para ${user.email}: ${token}`);
+    if (process.env.NODE_ENV === 'development') {
       return ok({ sent: true, devToken: token });
     }
 

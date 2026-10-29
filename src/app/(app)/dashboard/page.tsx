@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowDownCircle, ArrowRight, ArrowUpCircle, TrendingUp, Wallet } from 'lucide-react';
+import { ArrowRight, CalendarClock, TrendingUp, Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/dashboard/stat-card';
-import { IncomeExpenseChart } from '@/components/dashboard/income-expense-chart';
 import { DashboardJourneySummary } from '@/components/dashboard/dashboard-journey-summary';
 import { DashboardInvestmentsSummary } from '@/components/dashboard/dashboard-investments-summary';
 import { requireUser } from '@/shared/auth/session';
@@ -15,9 +14,9 @@ import {
   getInvestmentStatsQuery,
 } from '@/modules/finance/application/queries/list-investments.query';
 import {
-  getMonthlySeriesQuery,
-  getMonthlySummaryQuery,
-} from '@/modules/finance/application/queries/list-transactions.query';
+  getFixedExpenseGroupTotalsQuery,
+  getFixedExpensePendingTotalsQuery,
+} from '@/modules/finance/application/queries/list-fixed-expenses.query';
 import { formatCurrency } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Dashboard' };
@@ -25,16 +24,18 @@ export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const now = new Date();
 
-  const [journeyRows, investments, investmentStats, monthSummary, monthlySeries] =
+  const [journeyRows, investments, investmentStats, expenseTotals, expensePending] =
     await Promise.all([
       listJourneysQuery(user.id),
       listInvestmentsQuery(user.id),
       getInvestmentStatsQuery(user.id),
-      getMonthlySummaryQuery(user.id, now.getFullYear(), now.getMonth()),
-      getMonthlySeriesQuery(user.id, 6),
+      getFixedExpenseGroupTotalsQuery(user.id),
+      getFixedExpensePendingTotalsQuery(user.id),
     ]);
+
+  const fixedTotal = expenseTotals.PLANOS + expenseTotals.INVESTIMENTOS + expenseTotals.GERAL;
+  const fixedPending = expensePending.PLANOS + expensePending.INVESTIMENTOS + expensePending.GERAL;
 
   const journeys = journeyRows.map((j) =>
     serializeJourney({
@@ -58,41 +59,33 @@ export default async function DashboardPage() {
     }),
   );
 
-  const monthLabel = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-
   return (
     <div className="space-y-6">
       <PageHeader
         title={`Olá, ${user.name.split(' ')[0]}`}
-        description="Resumo das suas finanças, jornada de estudos e patrimônio investido."
+        description="Resumo da jornada, dos gastos fixos e do patrimônio investido."
         actions={
           <Button asChild variant="outline" size="sm" className="gap-1.5">
-            <Link href="/financas/lancamentos">
-              Ver finanças completas
+            <Link href="/financas/gastos-fixos">
+              Ver gastos fixos
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </Button>
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
-          label={`Saldo em conta · ${monthLabel}`}
-          value={formatCurrency(monthSummary.balanceCash, user.currency)}
+          label="Gastos fixos no mês"
+          value={formatCurrency(fixedTotal, user.currency)}
+          icon={<CalendarClock />}
+          accent="info"
+        />
+        <StatCard
+          label="Ainda falta pagar"
+          value={formatCurrency(fixedPending, user.currency)}
           icon={<Wallet />}
-          accent={monthSummary.balanceCash >= 0 ? 'success' : 'destructive'}
-        />
-        <StatCard
-          label="Receitas no mês"
-          value={formatCurrency(monthSummary.income, user.currency)}
-          icon={<ArrowUpCircle />}
-          accent="success"
-        />
-        <StatCard
-          label="Despesas no mês"
-          value={formatCurrency(monthSummary.expenseTotal, user.currency)}
-          icon={<ArrowDownCircle />}
-          accent="destructive"
+          accent={fixedPending > 0 ? 'destructive' : 'success'}
         />
         <StatCard
           label="Patrimônio investido"
@@ -106,8 +99,6 @@ export default async function DashboardPage() {
           }
         />
       </div>
-
-      <IncomeExpenseChart data={monthlySeries} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <DashboardJourneySummary journeys={journeys} />

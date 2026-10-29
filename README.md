@@ -26,13 +26,20 @@ LifeOS é uma aplicação web moderna construída com Next.js 15, TypeScript, Pr
 
 ### Finanças (rota `/financas`)
 
-- Menu **Finanças** com abas: **Lançamentos**, **Investimentos**, **Gastos Fixos** e **A receber**
+- Menu **Finanças** com abas: **Investimentos**, **Gastos Fixos** e **A receber**
 - Investimentos: caixinhas com tipo, valor, cor e % do total (dados na tabela `Investment`)
 - Gastos fixos: submódulos **Planos**, **Investimentos** e **Geral**, com a soma dos três grupos, o quanto ainda falta pagar, dia de vencimento, checkbox de pago e limpeza das marcações daquele grupo
 - A receber: quem te deve, com valor, observação opcional e total em aberto
 - A receber → Fixos: valores mensais recorrentes, com marcação dos meses pagos salva por ano
-- Lançamentos legados em `/financas/lancamentos` (transações)
-- CRUD de transações, categorias, recorrência, cartão e parcelamento
+- Sem lançamentos avulsos: o controle mensal fica em gastos fixos e a receber
+
+### Gestão (`/gestao`)
+
+- Submódulos **Projetos**, **Clientes** e **VPS**
+- Um projeto pode ser vinculado a um cliente e a um servidor
+- VPS guarda provedor, rede, backups, estrutura de pastas e o que está hospedado
+- Cores, status, stack e textos livres para personalizar cada cadastro
+- Senhas e chaves não são armazenadas
 
 ### Desejos (`/desejos`)
 
@@ -101,14 +108,13 @@ src/
 │   ├── (app)/                    # Páginas autenticadas
 │   │   ├── dashboard/
 │   │   ├── financas/
+│   │   ├── gestao/
 │   │   ├── jornada/
 │   │   ├── desejos/
 │   │   ├── recursos/
 │   │   └── onboarding/
 │   ├── api/                      # Route Handlers (REST)
 │   │   ├── auth/                 # login, register, refresh, logout, ...
-│   │   ├── transactions/
-│   │   ├── categories/
 │   │   ├── notifications/
 │   │   ├── dashboard/
 │   │   └── me/                   # onboarding

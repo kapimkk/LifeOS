@@ -12,11 +12,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiFetch } from '@/lib/fetcher';
 import { loginSchema, type LoginInput } from '@/lib/validators/auth';
+import { safeNextPath } from '@/lib/safe-redirect';
 
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get('next') ?? '/dashboard';
+  const next = safeNextPath(params.get('next'));
   const [submitting, setSubmitting] = useState(false);
   const [awaitingApproval, setAwaitingApproval] = useState(false);
 

@@ -22,26 +22,6 @@ enum Role {
   ADMIN
 }
 
-enum TransactionType {
-  INCOME
-  EXPENSE
-}
-
-enum Recurrence {
-  NONE
-  DAILY
-  WEEKLY
-  MONTHLY
-  YEARLY
-}
-
-enum PaymentMethod {
-  CASH
-  CREDIT_CARD
-  DEBIT
-  PIX
-}
-
 enum NotificationType {
   INFO
   SUCCESS
@@ -81,14 +61,25 @@ enum FixedExpenseGroup {
   GERAL
 }
 
-enum WeekDay {
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-  SUNDAY
+enum ClientStatus {
+  LEAD
+  ACTIVE
+  PAUSED
+  FORMER
+}
+
+enum ProjectStatus {
+  IDEA
+  ACTIVE
+  PAUSED
+  DELIVERED
+  ARCHIVED
+}
+
+enum ServerStatus {
+  ONLINE
+  MAINTENANCE
+  OFFLINE
 }
 
 // ----------------------------------------------------------
@@ -113,8 +104,6 @@ model User {
 
   refreshTokens     RefreshToken[]
   passwordResets    PasswordResetToken[]
-  categories        Category[]
-  transactions      FinancialTransaction[]
   notifications     Notification[]
   investments       Investment[]
   wishItems         WishItem[]
@@ -123,7 +112,9 @@ model User {
   fixedReceivables  FixedReceivable[]
   resources         Resource[]
   journeys          Journey[]
-  routineItems      RoutineItem[]
+  customers         Customer[]
+  vpsServers        VpsServer[]
+  projects          Project[]
 
   @@index([email])
 }
@@ -154,53 +145,6 @@ model PasswordResetToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-}
-
-// ----------------------------------------------------------
-// FINANCIAL
-// ----------------------------------------------------------
-
-model Category {
-  id        String          @id @default(cuid())
-  userId    String
-  name      String
-  color     String          @default("#6366f1")
-  icon      String?
-  type      TransactionType @default(EXPENSE)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-
-  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions FinancialTransaction[]
-
-  @@unique([userId, name, type])
-  @@index([userId])
-}
-
-model FinancialTransaction {
-  id          String          @id @default(cuid())
-  userId      String
-  categoryId  String?
-  type        TransactionType
-  amount      Decimal         @db.Decimal(14, 2)
-  description String
-  notes       String?
-  date        DateTime
-  recurrence  Recurrence      @default(NONE)
-  paymentMethod PaymentMethod @default(CASH)
-  installments  Int           @default(1)
-  isCreditCard Boolean        @default(false)
-  installmentGroupId String?
-  installmentNumber  Int?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-
-  @@index([userId, date])
-  @@index([categoryId])
-  @@index([userId, installmentGroupId])
 }
 
 // ----------------------------------------------------------
@@ -358,27 +302,82 @@ model Resource {
 }
 
 // ----------------------------------------------------------
-// ROTINA SEMANAL — blocos de horário por dia da semana
+// GESTÃO — clientes, VPS e projetos vinculados
 // ----------------------------------------------------------
 
-model RoutineItem {
-  id          String   @id @default(cuid())
-  userId      String
-  day         WeekDay
-  // Minutos desde 00:00 (0-1439). Evita depender de fuso/timezone e permite
-  // granularidade de 15/30min além de blocos cheios de hora.
-  startMinute Int
-  endMinute   Int
-  title       String
-  description String?
-  category    String   @default("Outro")
-  color       String   @default("#6366f1")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Customer {
+  id        String       @id @default(cuid())
+  userId    String
+  name      String
+  company   String?
+  email     String?
+  phone     String?
+  website   String?
+  status    ClientStatus @default(ACTIVE)
+  color     String       @default("#6366f1")
+  notes     String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects Project[]
 
-  @@index([userId, day])
+  @@index([userId, status])
+}
+
+model VpsServer {
+  id               String       @id @default(cuid())
+  userId           String
+  name             String
+  provider         String?
+  hostname         String?
+  ipAddress        String?
+  operatingSystem  String?
+  region           String?
+  cpu              String?
+  ramGb            Int?
+  diskGb           Int?
+  status           ServerStatus @default(ONLINE)
+  monthlyCost      Decimal?     @db.Decimal(14, 2)
+  panelUrl         String?
+  color            String       @default("#0ea5e9")
+  backupNotes      String?
+  folderStructure  String?
+  hostedNotes      String?
+  notes            String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projects Project[]
+
+  @@index([userId, status])
+}
+
+model Project {
+  id             String        @id @default(cuid())
+  userId         String
+  name           String
+  summary        String?
+  specification  String?
+  status         ProjectStatus @default(ACTIVE)
+  color          String        @default("#22c55e")
+  customerId     String?
+  serverId       String?
+  stack          String[]      @default([])
+  repoUrl        String?
+  liveUrl        String?
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customer Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  server   VpsServer? @relation(fields: [serverId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([customerId])
+  @@index([serverId])
 }
 
 // ----------------------------------------------------------

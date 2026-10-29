@@ -1,25 +1,7 @@
-import { PrismaClient, TransactionType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
-
-const DEFAULT_CATEGORIES: Array<{
-  name: string;
-  color: string;
-  icon: string;
-  type: TransactionType;
-}> = [
-  { name: 'Alimentação', color: '#f97316', icon: 'utensils', type: 'EXPENSE' },
-  { name: 'Transporte', color: '#3b82f6', icon: 'car', type: 'EXPENSE' },
-  { name: 'Lazer', color: '#a855f7', icon: 'gamepad-2', type: 'EXPENSE' },
-  { name: 'Estudos', color: '#06b6d4', icon: 'book-open', type: 'EXPENSE' },
-  { name: 'Moradia', color: '#ef4444', icon: 'home', type: 'EXPENSE' },
-  { name: 'Saúde', color: '#10b981', icon: 'heart-pulse', type: 'EXPENSE' },
-  { name: 'Investimentos', color: '#22c55e', icon: 'trending-up', type: 'EXPENSE' },
-  { name: 'Salário', color: '#16a34a', icon: 'wallet', type: 'INCOME' },
-  { name: 'Freelance', color: '#0ea5e9', icon: 'briefcase', type: 'INCOME' },
-  { name: 'Rendimentos', color: '#84cc16', icon: 'coins', type: 'INCOME' },
-];
 
 async function main() {
   // Credenciais do usuário semeado são configuráveis por env var para evitar
@@ -50,14 +32,6 @@ async function main() {
       onboardedAt: new Date(),
     },
   });
-
-  for (const c of DEFAULT_CATEGORIES) {
-    await prisma.category.upsert({
-      where: { userId_name_type: { userId: user.id, name: c.name, type: c.type } },
-      update: {},
-      create: { ...c, userId: user.id },
-    });
-  }
 
   const investmentsExist = await prisma.investment.count({ where: { userId: user.id } });
   if (investmentsExist === 0) {

@@ -1,5 +1,4 @@
 import 'server-only';
-import { type TransactionType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 const userSelect = {
@@ -27,27 +26,12 @@ export const userRepository = {
     return prisma.user.findUnique({ where: { email } });
   },
 
-  async create(data: {
-    name: string;
-    email: string;
-    passwordHash: string;
-    defaultCategories?: Array<{ name: string; color: string; icon: string; type: TransactionType }>;
-  }) {
+  async create(data: { name: string; email: string; passwordHash: string }) {
     return prisma.user.create({
       data: {
         name: data.name,
         email: data.email,
         passwordHash: data.passwordHash,
-        ...(data.defaultCategories && {
-          categories: {
-            create: data.defaultCategories.map((c) => ({
-              name: c.name,
-              color: c.color,
-              icon: c.icon,
-              type: c.type,
-            })),
-          },
-        }),
       },
       select: { id: true, name: true, email: true, role: true },
     });

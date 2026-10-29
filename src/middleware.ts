@@ -1,7 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { getClientIp } from '@/lib/get-client-ip';
-import { authBruteForceKey, bruteForceResponse, checkAuthBruteForce } from '@/lib/auth-brute-force';
+import {
+  authBruteForceKey,
+  bruteForceResponse,
+  checkAuthBruteForce,
+  consumeRateLimit,
+} from '@/lib/auth-brute-force';
 
 const ACCESS_COOKIE = 'lifeos_access';
 const REFRESH_COOKIE = 'lifeos_refresh';
@@ -17,6 +22,23 @@ const PUBLIC_PATHS = [
   '/api/auth/reset-password',
   '/api/auth/refresh',
 ];
+
+function isStateChange(method: string) {
+  return method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE';
+}
+
+function isTrustedMutation(req: NextRequest) {
+  const origin = req.headers.get('origin');
+  if (origin) {
+    try {
+      return new URL(origin).host === req.nextUrl.host;
+    } catch {
+      return false;
+    }
+  }
+  const fetchSite = req.headers.get('sec-fetch-site');
+  return fetchSite === 'same-origin' || fetchSite === 'none';
+}
 
 function isPublic(pathname: string) {
   if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return true;
@@ -45,6 +67,10 @@ async function isValidAccess(token: string | undefined) {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  if (isStateChange(req.method) && !isTrustedMutation(req)) {
+    return NextResponse.json({ error: 'Origem não permitida' }, { status: 403 });
+  }
+
   if (
     req.method === 'POST' &&
     (pathname === '/api/auth/login' || pathname === '/api/auth/register')
@@ -53,6 +79,16 @@ export async function middleware(req: NextRequest) {
     const blocked = checkAuthBruteForce(authBruteForceKey(scope, getClientIp(req)));
     if (!blocked.allowed) {
       return bruteForceResponse(blocked.retryAfterSec ?? 900);
+    }
+  }
+
+  if (
+    req.method === 'POST' &&
+    (pathname === '/api/auth/forgot-password' || pathname === '/api/auth/reset-password')
+  ) {
+    const limited = consumeRateLimit(`reset:${getClientIp(req)}`, 5, 15 * 60_000);
+    if (!limited.allowed) {
+      return bruteForceResponse(limited.retryAfterSec ?? 900);
     }
   }
 

@@ -30,7 +30,7 @@ export interface BruteForceCheck {
   retryAfterSec?: number;
 }
 
-export function authBruteForceKey(scope: 'login' | 'register', ip: string): string {
+export function authBruteForceKey(scope: 'login' | 'register' | 'reset', ip: string): string {
   return `${scope}:${ip}`;
 }
 
@@ -75,6 +75,21 @@ export function recordAuthFailure(key: string): BruteForceCheck {
     };
   }
 
+  return { allowed: true };
+}
+
+const requestHits = new Map<string, number[]>();
+
+/** Conta requisições (não só falhas). Usado em recuperação de senha. */
+export function consumeRateLimit(key: string, max: number, windowMs: number): BruteForceCheck {
+  const now = Date.now();
+  const hits = (requestHits.get(key) ?? []).filter((time) => time > now - windowMs);
+  if (hits.length >= max) {
+    const retryAfterSec = Math.ceil((hits[0]! + windowMs - now) / 1000);
+    return { allowed: false, retryAfterSec: Math.max(retryAfterSec, 1) };
+  }
+  hits.push(now);
+  requestHits.set(key, hits);
   return { allowed: true };
 }
 

@@ -9,7 +9,19 @@
 ## Brute force
 
 - 5 falhas de login/registro por IP em 1 minuto → bloqueio 15 min (HTTP 429).
-- Implementação: `src/lib/auth-brute-force.ts` + middleware em rotas `/api/auth/login` e `/api/auth/register`.
+- Recuperação e troca de senha: no máximo 5 pedidos a cada 15 minutos por IP.
+- Implementação: `src/lib/auth-brute-force.ts` + middleware.
+
+## CSRF
+
+- Cookies de sessão: `httpOnly` + `SameSite=Lax`.
+- Mutações (`POST`, `PUT`, `PATCH`, `DELETE`) só seguem se `Origin` bater com o host, ou se `Sec-Fetch-Site` for `same-origin`/`none`.
+- Depois do login, o parâmetro `next` só aceita caminho interno (`src/lib/safe-redirect.ts`).
+
+## Segredos
+
+- Tokens de redefinição de senha não são escritos em log.
+- O módulo de VPS não tem campo de senha ou chave privada.
 
 ## XSS
 
